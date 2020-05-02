@@ -9,9 +9,7 @@
 
 static led_s led = {0, 0x05};
 
-static void led_pthread(void);
-
-void led_pthread(void)
+void led_pthread(void *arg)
 {
 	for (uint8_t i = 0;; i++)
 	{

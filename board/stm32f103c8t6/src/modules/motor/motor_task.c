@@ -20,11 +20,6 @@ static void motor_pthread(void *arg)
 	}
 }
 
-void motor_task(void)
-{
-	pcb_create(24, &motor_pthread, NULL, 1024);
-}
-
 void motor_set_value(int motor, float value)
 {
 	if (_fd < 0)
@@ -88,4 +83,9 @@ void motor_set_value(int motor, float value)
 			return;
 		}
 	}
+}
+
+void motor_task(void)
+{
+	pcb_create(24, &motor_pthread, NULL, 1024);
 }

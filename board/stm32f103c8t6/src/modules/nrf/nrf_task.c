@@ -7,9 +7,7 @@
 
 #include <nrf_task.h>
 
-static void nrf_pthread(void);
-
-void nrf_pthread(void)
+void nrf_pthread(void *arg)
 {
 	uint16_t ctl[4] = {0};
 	uint8_t status = 0;

@@ -34,7 +34,7 @@ static const float sin_table[315] = //
 		-0.123, -0.103, -0.083, -0.063, -0.043, -0.023, -0.003																	//
 };
 
-void debug_pthread(void)
+void debug_pthread(void *arg)
 {
 	uint32_t i = 0;
 	while (1)
