@@ -2,8 +2,7 @@
 #include <fcntl.h>
 #include <fs.h>
 #include <std.h>
-#include <buff_s.h>
-#include <ttyS1.h>
+#include <serial1.h>
 
 int stdout_write(struct file *f, const void *buff, size_t size)
 {

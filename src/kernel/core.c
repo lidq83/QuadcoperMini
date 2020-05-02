@@ -10,6 +10,7 @@
 #include <sche.h>
 #include <mm.h>
 #include <vfs.h>
+#include <std.h>
 
 extern pcb_s *pcb_next;
 
@@ -34,6 +35,8 @@ void kernel_startup(void)
 
 	sche_init();
 
+	std_init();
+	
 	//创建空闲进程，优先级为最低，优先级31
 	pcb_s *pcb_idle = pcb_create(PROCESS_CNT - 1, &process_idle, NULL, 128);
 	pcb_next = pcb_idle;

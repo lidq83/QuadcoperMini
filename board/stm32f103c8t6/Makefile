@@ -49,6 +49,8 @@ CFLAGS		+=	-I./src/drv
 CFLAGS		+=	-I./src/dev
 CFLAGS		+=	-I./src/modules
 CFLAGS		+=	-I./src/modules/led
+CFLAGS		+=	-I./src/modules/motor
+CFLAGS		+=	-I./src/modules/nrf
 CFLAGS		+=	-I./src/modules/debug
 CFLAGS		+=	-I$(KERNEL_PATH)/kernel
 CFLAGS		+=	-I$(KERNEL_PATH)/lib
@@ -66,7 +68,8 @@ SRC			=	$(STM32_LIBS)/src/misc.c \
 				$(STM32_LIBS)/src/stm32f10x_usart.c \
 				$(STM32_LIBS)/src/stm32f10x_dma.c \
 				$(STM32_LIBS)/src/stm32f10x_exti.c \
-				$(STM32_LIBS)/src/stm32f10x_i2c.c
+				$(STM32_LIBS)/src/stm32f10x_i2c.c \
+				$(STM32_LIBS)/src/stm32f10x_spi.c
 
 #------------------------------------------------------------------------#
 # Setup system clock
@@ -76,21 +79,27 @@ SRC			+=	./src/main/system_stm32f10x.c
 # Main function
 SRC			+=	./src/main/main.c \
 				./src/modules/led/led_task.c \
+				./src/modules/motor/motor_task.c \
+				./src/modules/nrf/nrf_task.c \
 				./src/modules/debug/debug_task.c
 
 #------------------------------------------------------------------------#
 # Libs
-SRC			+=	./src/libs/buff_s.c
+SRC			+=	./src/libs/buff_s.c \
+				./src/libs/protocol.c \
+				./src/libs/crc.c
 
 #------------------------------------------------------------------------#
 # Drv
 SRC			+=	./src/drv/led.c \
 				./src/drv/sysclk.c \
-				./src/drv/serial1.c
+				./src/drv/serial1.c \
+				./src/drv/tim2.c \
+				./src/drv/nrf.c
 
 #------------------------------------------------------------------------#
 # Dev
-SRC			+=	./src/dev/ttyS1.c \
+SRC			+=	./src/dev/pwm.c \
 				./src/dev/std.c
 
 #------------------------------------------------------------------------#

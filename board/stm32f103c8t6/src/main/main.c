@@ -10,10 +10,13 @@
 #include <core.h>
 #include <sysclk.h>
 #include <serial1.h>
-#include <ttyS1.h>
 #include <std.h>
+#include <tim2.h>
+#include <pwm.h>
 #include <debug_task.h>
 #include <led_task.h>
+#include <motor_task.h>
+#include <nrf_task.h>
 
 /***************************************************************************************
  * 
@@ -35,10 +38,12 @@ int main(int argc, char *argv[])
 
 	led_init();
 	serial1_init();
-	ttyS1_init();
-	std_init();
+	tim2_init();
+	pwm_init();
 
 	led_task();
+	motor_task();
+	nrf_task();
 	debug_task();
 
 	sysclk_init();

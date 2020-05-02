@@ -28,7 +28,7 @@
 #include <math.h>
 #include <misc.h>
 #include <stdint.h>
-
+#include <string.h>
 #include <mm.h>
 
 #endif
