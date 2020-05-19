@@ -29,8 +29,8 @@ void nrf_pthread(void *arg)
 			float ctl0 = ((float)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 			float ctl1 = ((float)(ctl[3] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 
-			motor_set_value(0, ctl0);
-			motor_set_value(1, ctl1);
+			//motor_set_value(0, ctl0);
+			//motor_set_value(1, ctl1);
 		}
 
 		sleep_ticks(5);

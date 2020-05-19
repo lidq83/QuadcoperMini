@@ -12,11 +12,8 @@
 #include <sem.h>
 #include <pwm.h>
 #include <mm.h>
-
-#define MOTOR_CNT (2)
+#include <led.h>
 
 void motor_task(void);
-
-void motor_set_value(int motor, float value);
 
 #endif

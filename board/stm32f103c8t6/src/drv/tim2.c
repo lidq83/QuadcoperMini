@@ -3,7 +3,7 @@
 void tim2_init(void)
 {
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_AFIO, ENABLE);
 
 	GPIO_InitTypeDef GPIO_InitStructure;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
@@ -37,6 +37,11 @@ void tim2_init(void)
 
 	TIM_OC4Init(TIM2, &TIM_OCInitStructure);
 	TIM_OC4PreloadConfig(TIM2, TIM_OCPreload_Enable);
+
+	TIM_SetCompare1(TIM2, 0);
+	TIM_SetCompare2(TIM2, 0);
+	TIM_SetCompare3(TIM2, 0);
+	TIM_SetCompare4(TIM2, 0);
 
 	TIM_ARRPreloadConfig(TIM2, ENABLE);
 	TIM_Cmd(TIM2, ENABLE);

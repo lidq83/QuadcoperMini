@@ -95,6 +95,7 @@ SRC			+=	./src/drv/led.c \
 				./src/drv/sysclk.c \
 				./src/drv/serial1.c \
 				./src/drv/tim2.c \
+				./src/drv/tim4.c \
 				./src/drv/nrf.c
 
 #------------------------------------------------------------------------#
@@ -114,6 +115,14 @@ SRC			+=	$(KERNEL_PATH)/kernel/core.c \
 				$(KERNEL_PATH)/kernel/sche.c \
 				$(KERNEL_PATH)/kernel/sem.c \
 				$(KERNEL_PATH)/mm/mm.c \
+				$(KERNEL_PATH)/mm/mm_addfreechunk.c \
+				$(KERNEL_PATH)/mm/mm_shrinkchunk.c \
+				$(KERNEL_PATH)/mm/mm_free.c \
+				$(KERNEL_PATH)/mm/mm_initialize.c \
+				$(KERNEL_PATH)/mm/mm_malloc.c \
+				$(KERNEL_PATH)/mm/mm_realloc.c \
+				$(KERNEL_PATH)/mm/mm_sem.c \
+				$(KERNEL_PATH)/mm/mm_size2ndx.c \
 				$(KERNEL_PATH)/fs/vfs.c \
 				$(KERNEL_PATH)/fs/fs.c \
 				$(KERNEL_PATH)/fs/fcntl.c \
