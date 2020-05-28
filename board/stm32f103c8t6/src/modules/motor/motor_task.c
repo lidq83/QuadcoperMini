@@ -11,17 +11,6 @@ static void motor_set_value(int fd, int motor, float value);
 
 static void motor_pthread(void *arg)
 {
-	GPIO_InitTypeDef GPIO_InitStructure;
-
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-	GPIO_WriteBit(GPIOB, GPIO_Pin_4, 0);
-	GPIO_WriteBit(GPIOB, GPIO_Pin_5, 0);
-
 	int fd = open("/dev/pwm", 0, 0);
 	if (fd < 0)
 	{
@@ -30,12 +19,12 @@ static void motor_pthread(void *arg)
 	}
 
 	motor_set_value(fd, 0, 1.0f);
-	motor_set_value(fd, 1, -1.0f);
+	motor_set_value(fd, 1, 1.0f);
 
 	while (1)
 	{
 		led_blink(1);
-		sleep_ticks(1000);
+		sleep_ticks(100);
 	}
 
 	close(fd);

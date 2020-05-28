@@ -35,6 +35,8 @@ int main(int argc, char *argv[])
 
 	rcc_config();
 
+	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE); //禁用JTAG
+
 	kernel_startup();
 
 	led_init();
@@ -44,11 +46,13 @@ int main(int argc, char *argv[])
 	pwm_init();
 
 	led_task();
+
 	motor_task();
-	//nrf_task();
-	//debug_task();
+	// nrf_task();
+	debug_task();
 
 	sysclk_init();
+
 	while (1)
 	{
 	}
