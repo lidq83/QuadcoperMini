@@ -7,6 +7,8 @@
 
 #include <nrf_task.h>
 
+extern float motor_ctl[MOTOR_CNT];
+
 void nrf_pthread(void *arg)
 {
 	uint16_t ctl[4] = {0};
@@ -22,6 +24,8 @@ void nrf_pthread(void *arg)
 
 	NRF_RX_Mode();
 
+	k_printf("[ OK ] NRF init finished.\n");
+
 	while (1)
 	{
 		if (protocol_parse(ctl) == 0)
@@ -29,8 +33,16 @@ void nrf_pthread(void *arg)
 			float ctl0 = ((float)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 			float ctl1 = ((float)(ctl[3] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 
-			//motor_set_value(0, ctl0);
-			//motor_set_value(1, ctl1);
+			ctl0 = 1.0f - ctl0 * 2.0f;
+			ctl1 = 1.0f - ctl1 * 2.0f;
+
+			//ctl0 *= 0.15;
+			//ctl1 *= 0.15;
+
+			motor_ctl[0] = ctl0;
+			motor_ctl[1] = ctl1;
+
+			led_blink(1);
 		}
 
 		sleep_ticks(5);

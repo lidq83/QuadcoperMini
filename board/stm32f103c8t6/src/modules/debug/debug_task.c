@@ -9,11 +9,12 @@
 
 void debug_pthread(void *arg)
 {
-	uint32_t i = 0;
+	//uint32_t i = 0;
+
 	while (1)
 	{
-		k_printf("debug %04u\n", i++);
-		sleep_ticks(100);
+		//k_printf("debug %04u\n", i++);
+		sleep_ticks(1000);
 	}
 }
 

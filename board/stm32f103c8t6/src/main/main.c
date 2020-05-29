@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 	led_task();
 
 	motor_task();
-	// nrf_task();
+	nrf_task();
 	debug_task();
 
 	sysclk_init();

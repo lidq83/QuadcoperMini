@@ -7,6 +7,8 @@
 
 #include <motor_task.h>
 
+float motor_ctl[MOTOR_CNT] = {0};
+
 static void motor_set_value(int fd, int motor, float value);
 
 static void motor_pthread(void *arg)
@@ -18,13 +20,19 @@ static void motor_pthread(void *arg)
 		return;
 	}
 
-	motor_set_value(fd, 0, 1.0f);
-	motor_set_value(fd, 1, 1.0f);
+	for (int i = 0; i < MOTOR_CNT; i++)
+	{
+		motor_set_value(fd, i, 0.0f);
+	}
 
 	while (1)
 	{
-		led_blink(1);
-		sleep_ticks(100);
+		for (int i = 0; i < MOTOR_CNT; i++)
+		{
+			motor_set_value(fd, i, motor_ctl[i]);
+		}
+
+		sleep_ticks(10);
 	}
 
 	close(fd);
@@ -52,7 +60,6 @@ void motor_set_value(int fd, int motor, float value)
 		if (value > 0.0)
 		{
 			int pwm_val = (PWM_VAL_MAX - PWM_VAL_MIN) * value;
-
 			ioctl(fd, PWM_CMD_SET_CH1_VALUE, 0);
 			ioctl(fd, PWM_CMD_SET_CH0_VALUE, pwm_val);
 
@@ -60,8 +67,7 @@ void motor_set_value(int fd, int motor, float value)
 		}
 		if (value < 0.0)
 		{
-			int pwm_val = (PWM_VAL_MAX - PWM_VAL_MIN) * value;
-
+			int pwm_val = (PWM_VAL_MAX - PWM_VAL_MIN) * fabs(value);
 			ioctl(fd, PWM_CMD_SET_CH0_VALUE, 0);
 			ioctl(fd, PWM_CMD_SET_CH1_VALUE, pwm_val);
 
@@ -80,7 +86,6 @@ void motor_set_value(int fd, int motor, float value)
 		if (value > 0.0)
 		{
 			int pwm_val = (PWM_VAL_MAX - PWM_VAL_MIN) * value;
-
 			ioctl(fd, PWM_CMD_SET_CH3_VALUE, 0);
 			ioctl(fd, PWM_CMD_SET_CH2_VALUE, pwm_val);
 
@@ -88,8 +93,7 @@ void motor_set_value(int fd, int motor, float value)
 		}
 		if (value < 0.0)
 		{
-			int pwm_val = (PWM_VAL_MAX - PWM_VAL_MIN) * value;
-
+			int pwm_val = (PWM_VAL_MAX - PWM_VAL_MIN) * fabs(value);
 			ioctl(fd, PWM_CMD_SET_CH2_VALUE, 0);
 			ioctl(fd, PWM_CMD_SET_CH3_VALUE, pwm_val);
 
