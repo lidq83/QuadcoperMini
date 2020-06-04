@@ -51,6 +51,7 @@ CFLAGS		+=	-I./src/modules
 CFLAGS		+=	-I./src/modules/led
 CFLAGS		+=	-I./src/modules/motor
 CFLAGS		+=	-I./src/modules/nrf
+CFLAGS		+=	-I./src/modules/btn
 CFLAGS		+=	-I./src/modules/debug
 CFLAGS		+=	-I$(KERNEL_PATH)/kernel
 CFLAGS		+=	-I$(KERNEL_PATH)/lib
@@ -81,6 +82,7 @@ SRC			+=	./src/main/main.c \
 				./src/modules/led/led_task.c \
 				./src/modules/motor/motor_task.c \
 				./src/modules/nrf/nrf_task.c \
+				./src/modules/btn/btn_task.c \
 				./src/modules/debug/debug_task.c
 
 #------------------------------------------------------------------------#

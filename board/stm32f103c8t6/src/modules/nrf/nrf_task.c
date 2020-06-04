@@ -9,6 +9,8 @@
 
 extern float motor_ctl[MOTOR_CNT];
 
+extern int power_level;
+
 void nrf_pthread(void *arg)
 {
 	uint16_t ctl[4] = {0};
@@ -36,8 +38,9 @@ void nrf_pthread(void *arg)
 			ctl0 = 1.0f - ctl0 * 2.0f;
 			ctl1 = 1.0f - ctl1 * 2.0f;
 
-			//ctl0 *= 0.15;
-			//ctl1 *= 0.15;
+			float pl = (power_level + 1.0f) * 0.2f;
+			ctl0 *= pl;
+			ctl1 *= pl;
 
 			motor_ctl[0] = ctl0;
 			motor_ctl[1] = ctl1;

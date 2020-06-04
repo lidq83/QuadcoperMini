@@ -6,7 +6,7 @@
 typedef struct led_s
 {
 	uint8_t led_num;
-	uint8_t led_val;
+	uint16_t led_val;
 } led_s;
 
 void led_init();

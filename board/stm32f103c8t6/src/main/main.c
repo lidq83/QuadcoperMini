@@ -18,6 +18,7 @@
 #include <led_task.h>
 #include <motor_task.h>
 #include <nrf_task.h>
+#include <btn_task.h>
 
 /***************************************************************************************
  * 
@@ -49,6 +50,7 @@ int main(int argc, char *argv[])
 
 	motor_task();
 	nrf_task();
+	btn_task();
 	debug_task();
 
 	sysclk_init();
