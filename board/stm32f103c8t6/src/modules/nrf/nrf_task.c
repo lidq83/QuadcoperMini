@@ -7,6 +7,10 @@
 
 #include <nrf_task.h>
 
+#define CTL_PWM_MAX (2200)
+#define CTL_PWM_MIN (800)
+#define CTL_PWM_SCALE (CTL_PWM_MAX - CTL_PWM_MIN)
+
 extern float motor_ctl[MOTOR_CNT];
 
 extern int power_level;
@@ -38,9 +42,11 @@ void nrf_pthread(void *arg)
 			ctl0 = 1.0f - ctl0 * 2.0f;
 			ctl1 = 1.0f - ctl1 * 2.0f;
 
-			float pl = (power_level + 1.0f) * 0.2f;
-			ctl0 *= pl;
-			ctl1 *= pl;
+#ifdef MOTOR_TYPE_CAR
+			// float pl = (power_level + 1.0f) * 0.2f;
+			// ctl0 *= pl;
+			// ctl1 *= pl;
+#endif
 
 			motor_ctl[0] = ctl0;
 			motor_ctl[1] = ctl1;

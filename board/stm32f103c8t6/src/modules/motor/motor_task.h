@@ -14,8 +14,6 @@
 #include <mm.h>
 #include <led.h>
 
-#define MOTOR_CNT (2)
-
 void motor_task(void);
 
 #endif

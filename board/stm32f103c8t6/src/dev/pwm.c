@@ -45,6 +45,22 @@ int pwm_ioctl(struct file *fs, unsigned int cmd, unsigned long arg)
 		tim2_set_value(3, pwm_val);
 		break;
 
+	case PWM_CMD_SET_CH4_VALUE:
+		tim4_set_value(0, pwm_val);
+		break;
+
+	case PWM_CMD_SET_CH5_VALUE:
+		tim4_set_value(1, pwm_val);
+		break;
+
+	case PWM_CMD_SET_CH6_VALUE:
+		tim4_set_value(2, pwm_val);
+		break;
+
+	case PWM_CMD_SET_CH7_VALUE:
+		tim4_set_value(3, pwm_val);
+		break;
+
 	default:
 		break;
 	}

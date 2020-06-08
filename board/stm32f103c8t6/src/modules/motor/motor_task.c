@@ -49,6 +49,7 @@ void motor_set_value(int fd, int motor, float value)
 		value = -1.0f;
 	}
 
+#ifdef MOTOR_TYPE_CAR
 	if (motor == 0)
 	{
 		if (fabs(value) < 0.01)
@@ -100,6 +101,48 @@ void motor_set_value(int fd, int motor, float value)
 			return;
 		}
 	}
+#endif
+
+#ifdef MOTOR_TYPE_BOAT
+	if (motor == 0)
+	{
+		if (fabs(value) < 0.01)
+		{
+			ioctl(fd, PWM_CMD_SET_CH4_VALUE, PWM_VAL_MIN);
+			return;
+		}
+		if (value < 0.0)
+		{
+			int pwm_val = PWM_VAL_MIN + (PWM_VAL_MAX - PWM_VAL_MIN) * fabs(value);
+			ioctl(fd, PWM_CMD_SET_CH4_VALUE, pwm_val);
+			return;
+		}
+	}
+	if (motor == 1)
+	{
+		// static uint16_t val = 0;
+		// if (val % 100 == 0)
+		// {
+		// 	k_printf("%u\n", 1100 + val);
+		// 	ioctl(fd, PWM_CMD_SET_CH7_VALUE, 1000 + val);
+		// }
+		// val++;
+		// val %= 1000;
+
+		if (fabs(value) < 0.01)
+		{
+			// ioctl(fd, PWM_CMD_SET_CH7_VALUE, 1500);
+			ioctl(fd, PWM_CMD_SET_CH7_VALUE, PWM_VAL_MID);
+			return;
+		}
+
+		// int pwm_val = 1500 + (2500 - 500) / 2 * value;
+		// ioctl(fd, PWM_CMD_SET_CH7_VALUE, pwm_val);
+		int pwm_val = PWM_VAL_MID + (PWM_VAL_MAX - PWM_VAL_MIN) / 2 * value;
+		ioctl(fd, PWM_CMD_SET_CH7_VALUE, pwm_val);
+		return;
+	}
+#endif
 }
 
 void motor_task(void)

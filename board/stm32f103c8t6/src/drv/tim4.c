@@ -14,7 +14,7 @@ void tim4_init(void)
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
 	TIM_OCInitTypeDef TIM_OCInitStructure;
 
-	TIM_TimeBaseStructure.TIM_Period = 2000 - 1;
+	TIM_TimeBaseStructure.TIM_Period = 20000 - 1;
 	TIM_TimeBaseStructure.TIM_Prescaler = 72 - 1;
 	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
