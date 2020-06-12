@@ -98,6 +98,7 @@ SRC			+=	./src/drv/led.c \
 				./src/drv/serial1.c \
 				./src/drv/tim2.c \
 				./src/drv/tim4.c \
+				./src/drv/spi.c \
 				./src/drv/nrf.c
 
 #------------------------------------------------------------------------#

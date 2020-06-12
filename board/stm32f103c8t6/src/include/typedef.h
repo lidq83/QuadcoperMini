@@ -31,4 +31,6 @@
 #include <string.h>
 #include <mm.h>
 
+#include <board.h>
+
 #endif

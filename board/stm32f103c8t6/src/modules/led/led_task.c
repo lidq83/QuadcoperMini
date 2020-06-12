@@ -19,7 +19,12 @@ void led_pthread(void *arg)
 	{
 		if (i % 16 == 0)
 		{
+#ifdef MOTOR_TYPE_CAR
 			led.led_val = led_vals[power_level];
+#endif
+#ifdef MOTOR_TYPE_BOAT
+			led.led_val = 0x05;
+#endif
 		}
 
 		if ((led.led_val >> (i % 16)) & 0x1)
