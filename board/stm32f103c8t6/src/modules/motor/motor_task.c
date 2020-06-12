@@ -120,26 +120,14 @@ void motor_set_value(int fd, int motor, float value)
 	}
 	if (motor == 1)
 	{
-		// static uint16_t val = 0;
-		// if (val % 100 == 0)
-		// {
-		// 	k_printf("%u\n", 1100 + val);
-		// 	ioctl(fd, PWM_CMD_SET_CH7_VALUE, 1000 + val);
-		// }
-		// val++;
-		// val %= 1000;
-
 		if (fabs(value) < 0.01)
 		{
-			// ioctl(fd, PWM_CMD_SET_CH7_VALUE, 1500);
-			ioctl(fd, PWM_CMD_SET_CH7_VALUE, PWM_VAL_MID);
+			ioctl(fd, PWM_CMD_SET_CH5_VALUE, PWM_VAL_MID);
 			return;
 		}
 
-		// int pwm_val = 1500 + (2500 - 500) / 2 * value;
-		// ioctl(fd, PWM_CMD_SET_CH7_VALUE, pwm_val);
 		int pwm_val = PWM_VAL_MID + (PWM_VAL_MAX - PWM_VAL_MIN) / 2 * value;
-		ioctl(fd, PWM_CMD_SET_CH7_VALUE, pwm_val);
+		ioctl(fd, PWM_CMD_SET_CH5_VALUE, pwm_val);
 		return;
 	}
 #endif

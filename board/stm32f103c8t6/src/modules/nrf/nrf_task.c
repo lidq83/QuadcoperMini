@@ -37,7 +37,7 @@ void nrf_pthread(void *arg)
 		if (protocol_parse(ctl) == 0)
 		{
 			float ctl0 = ((float)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
-			float ctl1 = ((float)(ctl[3] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+			float ctl1 = ((float)(ctl[2] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 
 			ctl0 = 1.0f - ctl0 * 2.0f;
 			ctl1 = 1.0f - ctl1 * 2.0f;
