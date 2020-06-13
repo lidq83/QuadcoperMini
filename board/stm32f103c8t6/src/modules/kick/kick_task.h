@@ -4,14 +4,14 @@
  *  Created on: December 23, 2019
  *      Author: lidq
  */
-#ifndef __SRC_MODULES_BTN_TASK_H
-#define __SRC_MODULES_BTN_TASK_H
+#ifndef __SRC_MODULES_KICK_TASK_H
+#define __SRC_MODULES_KICK_TASK_H
 
 #include <typedef.h>
 #include <sche.h>
 
-#define BUTTON_CNT	(2)
+#define KICK_CNT	(4)
 
-void btn_task(void);
+void kick_task(void);
 
 #endif

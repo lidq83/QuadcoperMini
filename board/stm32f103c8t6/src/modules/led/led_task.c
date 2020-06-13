@@ -9,25 +9,11 @@
 
 static led_s led = {0, 0x05};
 
-int led_vals[5] = {0x1, 0x5, 0x15, 0x55, 0x155};
-
-extern int power_level;
-
 void led_pthread(void *arg)
 {
 	for (uint8_t i = 0;; i++)
 	{
-		if (i % 16 == 0)
-		{
-#ifdef MOTOR_TYPE_CAR
-			led.led_val = led_vals[power_level];
-#endif
-#ifdef MOTOR_TYPE_BOAT
-			led.led_val = 0x05;
-#endif
-		}
-
-		if ((led.led_val >> (i % 16)) & 0x1)
+		if ((led.led_val >> (i % 8)) & 0x1)
 		{
 			led_on(led.led_num);
 		}
@@ -41,5 +27,5 @@ void led_pthread(void *arg)
 
 void led_task(void)
 {
-	pcb_create(28, &led_pthread, NULL, 512);
+	pcb_create(PROI_LED, &led_pthread, NULL, 512);
 }

@@ -5,6 +5,6 @@
 
 void tim4_init(void);
 
-void tim4_set_value(int chanel, uint16_t value);
+void tim4_set_rate(uint16_t rate);
 
 #endif

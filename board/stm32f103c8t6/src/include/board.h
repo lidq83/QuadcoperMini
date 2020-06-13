@@ -9,24 +9,19 @@
 #define SERIAL_BAUTRATE (115200)
 #endif
 
+#define PROI_LED (30)
+#define PROI_BUZZER (28)
+#define PROI_DT (26)
+#define PROI_DT_TM (25)
+#define PROI_MOTOR (24)
+#define PROI_NRF (22)
+#define PROI_KICK (20)
 
 #define MOTOR_CNT (2)
 
-// #define MOTOR_TYPE_CAR
-#define MOTOR_TYPE_BOAT
-
-
-
-#ifdef MOTOR_TYPE_CAR
 #define PWM_VAL_MAX (2000)
 #define PWM_VAL_MIN (0)
-#endif
 
-#ifdef MOTOR_TYPE_BOAT
-#define PWM_VAL_MAX (2000)
-#define PWM_VAL_MIN (800)
-#endif
-
-#define PWM_VAL_MID	(PWM_VAL_MIN+((PWM_VAL_MAX-PWM_VAL_MIN)/2))
+#define PWM_VAL_MID (PWM_VAL_MIN + ((PWM_VAL_MAX - PWM_VAL_MIN) / 2))
 
 #endif

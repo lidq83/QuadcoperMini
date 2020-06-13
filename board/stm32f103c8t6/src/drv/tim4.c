@@ -6,7 +6,7 @@ void tim4_init(void)
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);
 
 	GPIO_InitTypeDef GPIO_InitStructure;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
@@ -14,7 +14,7 @@ void tim4_init(void)
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
 	TIM_OCInitTypeDef TIM_OCInitStructure;
 
-	TIM_TimeBaseStructure.TIM_Period = 20000 - 1;
+	TIM_TimeBaseStructure.TIM_Period = 2000 - 1;
 	TIM_TimeBaseStructure.TIM_Prescaler = 72 - 1;
 	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
@@ -26,48 +26,34 @@ void tim4_init(void)
 	TIM_OCInitStructure.TIM_Pulse = 0;
 	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
 
-	TIM_OC1Init(TIM4, &TIM_OCInitStructure);
-	TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Enable);
-
-	TIM_OC2Init(TIM4, &TIM_OCInitStructure);
-	TIM_OC2PreloadConfig(TIM4, TIM_OCPreload_Enable);
-
-	TIM_OC3Init(TIM4, &TIM_OCInitStructure);
-	TIM_OC3PreloadConfig(TIM4, TIM_OCPreload_Enable);
-
 	TIM_OC4Init(TIM4, &TIM_OCInitStructure);
 	TIM_OC4PreloadConfig(TIM4, TIM_OCPreload_Enable);
 
-	TIM_SetCompare1(TIM4, 0);
-	TIM_SetCompare2(TIM4, 0);
-	TIM_SetCompare3(TIM4, 0);
 	TIM_SetCompare4(TIM4, 0);
 
 	TIM_ARRPreloadConfig(TIM4, ENABLE);
 	TIM_Cmd(TIM4, ENABLE);
 }
 
-void tim4_set_value(int chanel, uint16_t value)
+void tim4_set_pwm(uint16_t pwm)
 {
-	switch (chanel)
-	{
-	case 0:
-		TIM_SetCompare1(TIM4, value);
-		break;
+	TIM_SetCompare4(TIM4, pwm);
+}
 
-	case 1:
-		TIM_SetCompare2(TIM4, value);
-		break;
+void tim4_set_rate(uint16_t rate)
+{
+	TIM_Cmd(TIM4, DISABLE);
 
-	case 2:
-		TIM_SetCompare3(TIM4, value);
-		break;
+	uint32_t period = (uint32_t)(1000000.0f / rate);
 
-	case 3:
-		TIM_SetCompare4(TIM4, value);
-		break;
+	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+	TIM_TimeBaseStructure.TIM_Period = period - 1;
+	TIM_TimeBaseStructure.TIM_Prescaler = 72 - 1;
+	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
+	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure);
 
-	default:
-		break;
-	}
+	tim4_set_pwm(period / 2);
+
+	TIM_Cmd(TIM4, ENABLE);
 }

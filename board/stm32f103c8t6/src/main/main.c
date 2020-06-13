@@ -14,11 +14,12 @@
 #include <tim2.h>
 #include <tim4.h>
 #include <pwm.h>
-#include <debug_task.h>
 #include <led_task.h>
 #include <motor_task.h>
 #include <nrf_task.h>
-#include <btn_task.h>
+#include <buzzer_task.h>
+#include <kick_task.h>
+#include <dt_task.h>
 
 /***************************************************************************************
  * 
@@ -36,7 +37,8 @@ int main(int argc, char *argv[])
 
 	rcc_config();
 
-	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE); //禁用JTAG
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO,ENABLE);
+	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
 
 	kernel_startup();
 
@@ -47,11 +49,11 @@ int main(int argc, char *argv[])
 	pwm_init();
 
 	led_task();
-
+	buzzer_task();
+	dt_task();
+	kick_task();
 	motor_task();
 	nrf_task();
-	btn_task();
-	debug_task();
 
 	sysclk_init();
 
