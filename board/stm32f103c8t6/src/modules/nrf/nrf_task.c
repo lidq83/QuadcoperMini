@@ -7,8 +7,8 @@
 
 #include <nrf_task.h>
 
-#define CTL_PWM_MAX (2200)
-#define CTL_PWM_MIN (800)
+#define CTL_PWM_MAX (2000)
+#define CTL_PWM_MIN (1000)
 #define CTL_PWM_SCALE (CTL_PWM_MAX - CTL_PWM_MIN)
 
 extern float motor_ctl[MOTOR_CNT];
@@ -36,17 +36,30 @@ void nrf_pthread(void *arg)
 
 			if (protocol_parse(ctl) == 0)
 			{
-				float ctl0 = ((float)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
-				float ctl1 = ((float)(ctl[3] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+				float ctl_power = ((float)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+				float ctl_dir = ((float)(ctl[2] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 
-				ctl0 = 1.0f - ctl0 * 2.0f;
-				ctl1 = 1.0f - ctl1 * 2.0f;
+				ctl_power = 1.0f - ctl_power * 2.0f;
+				ctl_dir = 1.0f - ctl_dir * 2.0f;
 
-				ctl0 *= 0.5;
-				ctl1 *= 0.5;
+				ctl_power *= 0.25;
 
-				motor_ctl[0] = ctl0;
-				motor_ctl[1] = ctl1;
+				float offset_left = 1.0f;
+				float offset_right = 1.0f;
+
+				if (ctl_dir > 0.1f)
+				{
+					offset_left = 1.0f - ctl_dir;
+				}
+				else if (ctl_dir < -0.1f)
+				{
+					offset_right = 1.0f - (-ctl_dir);
+				}
+
+				motor_ctl[0] = ctl_power * offset_left;
+				motor_ctl[1] = ctl_power * offset_right;
+
+				//k_printf("%4.2f %4.2f %4.2f %4.2f\n", ctl_power, ctl_dir, motor_ctl[0], motor_ctl[1]);
 
 				led_blink(1);
 			}
