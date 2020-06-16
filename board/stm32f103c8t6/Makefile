@@ -19,8 +19,9 @@ READELF		=	arm-none-eabi-readelf
 
 #------------------------------------------------------------------------#
 # Flags
-CFLAGS		+=	-g
+#CFLAGS		+=	-g
 CFLAGS		+=	-mthumb
+CFLAGS		+=	-lm
 CFLAGS		+=	-Wno-incompatible-pointer-types
 CFLAGS		+=	-Wno-unused-but-set-variable
 CFLAGS		+=	-Wno-unused-variable
@@ -51,6 +52,7 @@ CFLAGS		+=	-I./src/modules
 CFLAGS		+=	-I./src/modules/led
 CFLAGS		+=	-I./src/modules/motor
 CFLAGS		+=	-I./src/modules/nrf
+CFLAGS		+=	-I./src/modules/mpu6050
 CFLAGS		+=	-I$(KERNEL_PATH)/kernel
 CFLAGS		+=	-I$(KERNEL_PATH)/lib
 CFLAGS		+=	-I$(KERNEL_PATH)/libc
@@ -79,7 +81,8 @@ SRC			+=	./src/main/system_stm32f10x.c
 SRC			+=	./src/main/main.c \
 				./src/modules/led/led_task.c \
 				./src/modules/motor/motor_task.c \
-				./src/modules/nrf/nrf_task.c
+				./src/modules/nrf/nrf_task.c \
+				./src/modules/mpu6050/mpu6050_task.c
 
 #------------------------------------------------------------------------#
 # Libs
@@ -94,7 +97,9 @@ SRC			+=	./src/drv/led.c \
 				./src/drv/serial1.c \
 				./src/drv/tim2.c \
 				./src/drv/spi.c \
-				./src/drv/nrf.c
+				./src/drv/nrf.c \
+				./src/drv/i2c.c \
+				./src/drv/mpu6050.c
 
 #------------------------------------------------------------------------#
 # Dev

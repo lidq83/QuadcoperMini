@@ -16,6 +16,7 @@
 #include <led_task.h>
 #include <motor_task.h>
 #include <nrf_task.h>
+#include <mpu6050_task.h>
 
 /***************************************************************************************
  * 
@@ -44,6 +45,7 @@ int main(int argc, char *argv[])
 	pwm_init();
 
 	led_task();
+	mpu6050_task();
 	//motor_task();
 	//nrf_task();
 
