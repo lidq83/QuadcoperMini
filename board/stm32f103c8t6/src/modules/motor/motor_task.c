@@ -16,7 +16,6 @@ static void motor_pthread(void *arg)
 	int fd = open("/dev/pwm", 0, 0);
 	if (fd < 0)
 	{
-		k_printf("open pwm error.\n");
 		return;
 	}
 

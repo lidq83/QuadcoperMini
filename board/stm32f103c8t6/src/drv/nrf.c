@@ -454,7 +454,6 @@ void NRF24L01_check(void)
 		}
 		else
 		{
-			k_printf(g_ErrorString);
 		}
 		sleep_ticks(1500);
 	}

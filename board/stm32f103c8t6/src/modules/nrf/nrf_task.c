@@ -46,8 +46,6 @@ void nrf_pthread(void *arg)
 				motor_ctl[2] = ctl_thro;
 				motor_ctl[3] = ctl_thro;
 
-				k_printf("%4.2f\n", ctl_thro, ctl_roll, ctl_pitch, ctl_yaw);
-
 				led_blink(1);
 			}
 		}

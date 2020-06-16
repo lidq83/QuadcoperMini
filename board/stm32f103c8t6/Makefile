@@ -129,27 +129,7 @@ SRC			+=	$(KERNEL_PATH)/kernel/core.c \
 				$(KERNEL_PATH)/fs/vfs.c \
 				$(KERNEL_PATH)/fs/fs.c \
 				$(KERNEL_PATH)/fs/fcntl.c \
-				$(KERNEL_PATH)/libc/lib_libnoflush.c \
-				$(KERNEL_PATH)/libc/lib_memoutstream.c \
-				$(KERNEL_PATH)/libc/lib_nulloutstream.c \
-				$(KERNEL_PATH)/libc/lib_libvsprintf.c \
-				$(KERNEL_PATH)/libc/lib_vsprintf.c \
-				$(KERNEL_PATH)/libc/lib_vsnprintf.c \
-				$(KERNEL_PATH)/libc/lib_snprintf.c \
-				$(KERNEL_PATH)/libc/lib_dtoa.c \
-				$(KERNEL_PATH)/libc/lib_strtod.c \
-				$(KERNEL_PATH)/libc/lib_strtof.c \
-				$(KERNEL_PATH)/libc/lib_strtol.c \
-				$(KERNEL_PATH)/libc/lib_strtoll.c \
-				$(KERNEL_PATH)/libc/lib_strtoul.c \
-				$(KERNEL_PATH)/libc/lib_strtoull.c \
-				$(KERNEL_PATH)/libc/lib_skipspace.c \
-				$(KERNEL_PATH)/libc/lib_checkbase.c \
-				$(KERNEL_PATH)/libc/lib_isbasedigit.c \
-				$(KERNEL_PATH)/lib/slist.c \
-				$(KERNEL_PATH)/lib/k_string.c \
-				$(KERNEL_PATH)/lib/k_printf.c \
-				$(KERNEL_PATH)/lib/k_scanf.c
+				$(KERNEL_PATH)/lib/slist.c
 
 STARTUP		=	./src/main/startup_stm32f10x_md.s
 
@@ -170,10 +150,10 @@ $(CODE_FILE):$(ELF_FILE)
 	$(OBJDUMP) -S $^ > $@
 
 $(STARTUP_OBJ):$(STARTUP)
-	$(CC) $(CFLAGS) $^ -c $(STARTUP)
+	$(CC) $^ $(CFLAGS) -c $(STARTUP)
 
 $(ELF_FILE):$(SRC) $(STARTUP_OBJ)
-	$(CC) $(CFLAGS)	$^ -o $@
+	$(CC) $^ $(CFLAGS) -o $@
 
 install:
 	jlink -commanderscript loadbin_cmd.jlink

@@ -49,22 +49,22 @@ u8 temp3[MPU6050_DMP_MEMORY_CHUNK_SIZE];
 void mpu6050_setup()
 {
 	// initialize device
-	k_printf("Initializing I2C devices...\n\r");
+	//k_printf("Initializing I2C devices...\n\r");
 	mpu6050_initialize();
 
 	// verify connection
-	k_printf("Testing device connections...\n\r");
-	k_printf(mpu6050_testConnection() ? "MPU6050 connection successful\n\r" : "MPU6050 connection failed\n\r");
+	//k_printf("Testing device connections...\n\r");
+	//k_printf(mpu6050_testConnection() ? "MPU6050 connection successful\n\r" : "MPU6050 connection failed\n\r");
 
 	// load and configure the DMP
-	k_printf("Initializing DMP...\n\r");
+	//k_printf("Initializing DMP...\n\r");
 	devStatus = mpu6050_dmpInitialize();
 
 	// make sure it worked (returns 0 if so)
 	if (devStatus == 0)
 	{
 		// turn on the DMP, now that it's ready
-		k_printf("Enabling DMP...\n\r");
+		//k_printf("Enabling DMP...\n\r");
 		mpu6050_setDMPEnabled(1);
 
 		// enable Arduino interrupt detection
@@ -73,7 +73,7 @@ void mpu6050_setup()
 		mpuIntStatus = mpu6050_getIntStatus();
 
 		// set our DMP Ready flag so the main loop() function knows it's okay to use it
-		k_printf("DMP ready!\n\r");
+		//k_printf("DMP ready!\n\r");
 		dmpReady = 1;
 
 		// get expected DMP packet size for later comparison
@@ -85,7 +85,7 @@ void mpu6050_setup()
 		// 1 = initial memory load failed
 		// 2 = DMP configuration updates failed
 		// (if it's going to break, usually the code will be 1)
-		k_printf("DMP Initialization failed (code %d)\n\r", devStatus);
+		//k_printf("DMP Initialization failed (code %d)\n\r", devStatus);
 	}
 }
 
@@ -102,7 +102,7 @@ void mpu6050_value(float* x, float* y, float* z, float* gx, float* gy, float* gz
 	if (fifoCount == 1024)
 	{
 		mpu6050_resetFIFO();
-		//k_printf("FIFO overflow!\n\r");
+		////k_printf("FIFO overflow!\n\r");
 	}
 	else if (fifoCount >= 42)
 	{
@@ -388,12 +388,12 @@ u8 mpu6050_dmpInitialize()
 	// load DMP code into memory banks
 	if (mpu6050_writeProgMemoryBlock(mpu6050_dmpMemory, MPU6050_DMP_CODE_SIZE, 0, 0, 0))
 	{
-		k_printf("Success! DMP code written and verified.\n\r");
+		//k_printf("Success! DMP code written and verified.\n\r");
 
 		// write DMP configuration
 		if (mpu6050_writeProgDMPConfigurationSet(mpu6050_dmpConfig, MPU6050_DMP_CONFIG_SIZE))
 		{
-			k_printf("Success! DMP configuration written and verified.\n\r");
+			//k_printf("Success! DMP configuration written and verified.\n\r");
 
 			mpu6050_setClockSource(MPU6050_CLOCK_PLL_ZGYRO);
 
@@ -439,7 +439,7 @@ u8 mpu6050_dmpInitialize()
 			uint8_t fifoCount = mpu6050_getFIFOCount();
 			uint8_t fifoBuffer[128];
 
-			k_printf("Current FIFO count=%d\n\r", fifoCount);
+			//k_printf("Current FIFO count=%d\n\r", fifoCount);
 			if (fifoCount > 0)
 			{
 				mpu6050_getFIFOBytes(fifoBuffer, fifoCount);
@@ -484,12 +484,12 @@ u8 mpu6050_dmpInitialize()
 			}
 			mpu6050_writeMemoryBlock(dmpUpdate + 3, dmpUpdate[2], dmpUpdate[0], dmpUpdate[1], 0, 0);
 
-			k_printf("Waiting for FIFO count > 2...\n\r");
+			//k_printf("Waiting for FIFO count > 2...\n\r");
 			while ((fifoCount = mpu6050_getFIFOCount()) < 3)
 			{
 			}
 
-			k_printf("Current FIFO count=%d", fifoCount);
+			//k_printf("Current FIFO count=%d", fifoCount);
 			mpu6050_getFIFOBytes(fifoBuffer, fifoCount);
 
 			uint8_t mpuIntStatus __attribute__((__unused__)) = mpu6050_getIntStatus();

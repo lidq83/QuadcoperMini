@@ -27,8 +27,6 @@ static void mpu6050_pthread(void *arg)
 	{
 		mpu6050_value(&x, &y, &z, &gx, &gy, &gz, &ax, &ay, &az);
 
-		k_printf("%+6.3f %+6.3f %+6.3f %+6.3f %+6.3f %+6.3f\n", x, y, z, gx, gy, gz);
-
 		sleep_ticks(50);
 	}
 }
