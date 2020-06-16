@@ -5,7 +5,6 @@
 #include <fcntl.h>
 #include <fs.h>
 #include <tim2.h>
-#include <tim4.h>
 
 #define PWM_CMD_SET_CH0_VALUE (0x0100)
 #define PWM_CMD_SET_CH1_VALUE (0x0110)

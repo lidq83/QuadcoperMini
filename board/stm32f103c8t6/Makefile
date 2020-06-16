@@ -51,9 +51,6 @@ CFLAGS		+=	-I./src/modules
 CFLAGS		+=	-I./src/modules/led
 CFLAGS		+=	-I./src/modules/motor
 CFLAGS		+=	-I./src/modules/nrf
-CFLAGS		+=	-I./src/modules/kick
-CFLAGS		+=	-I./src/modules/buzzer
-CFLAGS		+=	-I./src/modules/dt
 CFLAGS		+=	-I$(KERNEL_PATH)/kernel
 CFLAGS		+=	-I$(KERNEL_PATH)/lib
 CFLAGS		+=	-I$(KERNEL_PATH)/libc
@@ -82,10 +79,7 @@ SRC			+=	./src/main/system_stm32f10x.c
 SRC			+=	./src/main/main.c \
 				./src/modules/led/led_task.c \
 				./src/modules/motor/motor_task.c \
-				./src/modules/nrf/nrf_task.c \
-				./src/modules/buzzer/buzzer_task.c \
-				./src/modules/dt/dt_task.c \
-				./src/modules/kick/kick_task.c
+				./src/modules/nrf/nrf_task.c
 
 #------------------------------------------------------------------------#
 # Libs
@@ -99,10 +93,8 @@ SRC			+=	./src/drv/led.c \
 				./src/drv/sysclk.c \
 				./src/drv/serial1.c \
 				./src/drv/tim2.c \
-				./src/drv/tim4.c \
 				./src/drv/spi.c \
-				./src/drv/nrf.c \
-				./src/drv/digital_tube.c
+				./src/drv/nrf.c
 
 #------------------------------------------------------------------------#
 # Dev

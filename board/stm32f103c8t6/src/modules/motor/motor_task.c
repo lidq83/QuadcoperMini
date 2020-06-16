@@ -44,61 +44,32 @@ void motor_set_value(int fd, int motor, float value)
 	{
 		value = 1.0f;
 	}
-	if (value < -1.0f)
+	if (value < 0.0f)
 	{
-		value = -1.0f;
+		value = 0.0f;
 	}
+
+	int pwm_val = PWM_VAL_MIN + (PWM_VAL_MAX - PWM_VAL_MIN) * value;
 
 	if (motor == 0)
 	{
-		if (fabs(value) < 0.01)
-		{
-			ioctl(fd, PWM_CMD_SET_CH0_VALUE, 0);
-			ioctl(fd, PWM_CMD_SET_CH1_VALUE, 0);
-			return;
-		}
-		if (value > 0.0)
-		{
-			int pwm_val = (PWM_VAL_MAX - PWM_VAL_MIN) * value;
-			ioctl(fd, PWM_CMD_SET_CH1_VALUE, 0);
-			ioctl(fd, PWM_CMD_SET_CH0_VALUE, pwm_val);
-
-			return;
-		}
-		if (value < 0.0)
-		{
-			int pwm_val = (PWM_VAL_MAX - PWM_VAL_MIN) * fabs(value);
-			ioctl(fd, PWM_CMD_SET_CH0_VALUE, 0);
-			ioctl(fd, PWM_CMD_SET_CH1_VALUE, pwm_val);
-
-			return;
-		}
+		ioctl(fd, PWM_CMD_SET_CH0_VALUE, pwm_val);
+		return;
 	}
-
 	if (motor == 1)
 	{
-		if (fabs(value) < 0.01)
-		{
-			ioctl(fd, PWM_CMD_SET_CH2_VALUE, 0);
-			ioctl(fd, PWM_CMD_SET_CH3_VALUE, 0);
-			return;
-		}
-		if (value > 0.0)
-		{
-			int pwm_val = (PWM_VAL_MAX - PWM_VAL_MIN) * value;
-			ioctl(fd, PWM_CMD_SET_CH3_VALUE, 0);
-			ioctl(fd, PWM_CMD_SET_CH2_VALUE, pwm_val);
-
-			return;
-		}
-		if (value < 0.0)
-		{
-			int pwm_val = (PWM_VAL_MAX - PWM_VAL_MIN) * fabs(value);
-			ioctl(fd, PWM_CMD_SET_CH2_VALUE, 0);
-			ioctl(fd, PWM_CMD_SET_CH3_VALUE, pwm_val);
-
-			return;
-		}
+		ioctl(fd, PWM_CMD_SET_CH1_VALUE, pwm_val);
+		return;
+	}
+	if (motor == 2)
+	{
+		ioctl(fd, PWM_CMD_SET_CH2_VALUE, pwm_val);
+		return;
+	}
+	if (motor == 3)
+	{
+		ioctl(fd, PWM_CMD_SET_CH3_VALUE, pwm_val);
+		return;
 	}
 }
 

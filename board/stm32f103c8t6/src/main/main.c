@@ -12,14 +12,10 @@
 #include <serial1.h>
 #include <std.h>
 #include <tim2.h>
-#include <tim4.h>
 #include <pwm.h>
 #include <led_task.h>
 #include <motor_task.h>
 #include <nrf_task.h>
-#include <buzzer_task.h>
-#include <kick_task.h>
-#include <dt_task.h>
 
 /***************************************************************************************
  * 
@@ -45,15 +41,11 @@ int main(int argc, char *argv[])
 	led_init();
 	serial1_init();
 	tim2_init();
-	tim4_init();
 	pwm_init();
 
 	led_task();
-	buzzer_task();
-	dt_task();
-	kick_task();
-	motor_task();
-	nrf_task();
+	//motor_task();
+	//nrf_task();
 
 	sysclk_init();
 
