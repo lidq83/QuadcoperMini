@@ -4,8 +4,8 @@
  *  Created on: December 23, 2019
  *      Author: lidq
  */
-#ifndef __SRC_MPU6050_TASK_H
-#define __SRC_MPU6050_TASK_H
+#ifndef __SRC_CONTROLLER_TASK_H
+#define __SRC_CONTROLLER_TASK_H
 
 #include <typedef.h>
 #include <sche.h>
@@ -13,6 +13,6 @@
 #include <pwm.h>
 #include <mm.h>
 
-void mpu6050_task(void);
+void controller_task(void);
 
 #endif

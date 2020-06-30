@@ -11,12 +11,15 @@
 #include <sysclk.h>
 #include <serial1.h>
 #include <std.h>
+#include <tim1.h>
 #include <tim2.h>
+#include <IOI2C.h>
 #include <pwm.h>
 #include <led_task.h>
 #include <motor_task.h>
 #include <nrf_task.h>
 #include <mpu6050_task.h>
+#include <controller_task.h>
 
 /***************************************************************************************
  * 
@@ -31,7 +34,7 @@ static void rcc_config();
 int main(int argc, char *argv[])
 {
 	SystemInit();
-
+	sysclk_init();
 	rcc_config();
 
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO,ENABLE);
@@ -46,10 +49,11 @@ int main(int argc, char *argv[])
 
 	led_task();
 	mpu6050_task();
-	//motor_task();
-	//nrf_task();
+	motor_task();
+	nrf_task();
+	controller_task();
 
-	sysclk_init();
+	tim1_init();
 
 	while (1)
 	{

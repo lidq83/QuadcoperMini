@@ -19,7 +19,7 @@ READELF		=	arm-none-eabi-readelf
 
 #------------------------------------------------------------------------#
 # Flags
-#CFLAGS		+=	-g
+CFLAGS		+=	-g -Os
 CFLAGS		+=	-mthumb
 CFLAGS		+=	-lm
 CFLAGS		+=	-Wno-incompatible-pointer-types
@@ -53,6 +53,7 @@ CFLAGS		+=	-I./src/modules/led
 CFLAGS		+=	-I./src/modules/motor
 CFLAGS		+=	-I./src/modules/nrf
 CFLAGS		+=	-I./src/modules/mpu6050
+CFLAGS		+=	-I./src/modules/controller
 CFLAGS		+=	-I$(KERNEL_PATH)/kernel
 CFLAGS		+=	-I$(KERNEL_PATH)/lib
 CFLAGS		+=	-I$(KERNEL_PATH)/libc
@@ -69,7 +70,6 @@ SRC			=	$(STM32_LIBS)/src/misc.c \
 				$(STM32_LIBS)/src/stm32f10x_usart.c \
 				$(STM32_LIBS)/src/stm32f10x_dma.c \
 				$(STM32_LIBS)/src/stm32f10x_exti.c \
-				$(STM32_LIBS)/src/stm32f10x_i2c.c \
 				$(STM32_LIBS)/src/stm32f10x_spi.c
 
 #------------------------------------------------------------------------#
@@ -82,7 +82,8 @@ SRC			+=	./src/main/main.c \
 				./src/modules/led/led_task.c \
 				./src/modules/motor/motor_task.c \
 				./src/modules/nrf/nrf_task.c \
-				./src/modules/mpu6050/mpu6050_task.c
+				./src/modules/mpu6050/mpu6050_task.c \
+				./src/modules/controller/controller_task.c
 
 #------------------------------------------------------------------------#
 # Libs
@@ -95,10 +96,13 @@ SRC			+=	./src/libs/buff_s.c \
 SRC			+=	./src/drv/led.c \
 				./src/drv/sysclk.c \
 				./src/drv/serial1.c \
+				./src/drv/tim1.c \
 				./src/drv/tim2.c \
 				./src/drv/spi.c \
 				./src/drv/nrf.c \
-				./src/drv/i2c.c \
+				./src/drv/IOI2C.c \
+				./src/drv/inv_mpu.c \
+				./src/drv/inv_mpu_dmp_motion_driver.c \
 				./src/drv/mpu6050.c
 
 #------------------------------------------------------------------------#
@@ -126,10 +130,28 @@ SRC			+=	$(KERNEL_PATH)/kernel/core.c \
 				$(KERNEL_PATH)/mm/mm_realloc.c \
 				$(KERNEL_PATH)/mm/mm_sem.c \
 				$(KERNEL_PATH)/mm/mm_size2ndx.c \
+				$(KERNEL_PATH)/libc/lib_libnoflush.c \
+				$(KERNEL_PATH)/libc/lib_memoutstream.c \
+				$(KERNEL_PATH)/libc/lib_nulloutstream.c \
+				$(KERNEL_PATH)/libc/lib_libvsprintf.c \
+				$(KERNEL_PATH)/libc/lib_vsprintf.c \
+				$(KERNEL_PATH)/libc/lib_vsnprintf.c \
+				$(KERNEL_PATH)/libc/lib_snprintf.c \
+				$(KERNEL_PATH)/libc/lib_dtoa.c \
+				$(KERNEL_PATH)/libc/lib_strtod.c \
+				$(KERNEL_PATH)/libc/lib_strtof.c \
+				$(KERNEL_PATH)/libc/lib_strtol.c \
+				$(KERNEL_PATH)/libc/lib_strtoll.c \
+				$(KERNEL_PATH)/libc/lib_strtoul.c \
+				$(KERNEL_PATH)/libc/lib_strtoull.c \
+				$(KERNEL_PATH)/libc/lib_skipspace.c \
+				$(KERNEL_PATH)/libc/lib_checkbase.c \
+				$(KERNEL_PATH)/libc/lib_isbasedigit.c \
 				$(KERNEL_PATH)/fs/vfs.c \
 				$(KERNEL_PATH)/fs/fs.c \
 				$(KERNEL_PATH)/fs/fcntl.c \
-				$(KERNEL_PATH)/lib/slist.c
+				$(KERNEL_PATH)/lib/slist.c \
+				$(KERNEL_PATH)/lib/k_printf.c
 
 STARTUP		=	./src/main/startup_stm32f10x_md.s
 

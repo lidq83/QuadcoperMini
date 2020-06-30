@@ -21,7 +21,6 @@ void led_on(int led)
 	case 0:
 		GPIO_WriteBit(GPIOA, GPIO_Pin_11, 0);
 		break;
-
 	case 1:
 		GPIO_WriteBit(GPIOA, GPIO_Pin_12, 0);
 		break;
@@ -38,7 +37,6 @@ void led_off(int led)
 	case 0:
 		GPIO_WriteBit(GPIOA, GPIO_Pin_11, 1);
 		break;
-
 	case 1:
 		GPIO_WriteBit(GPIOA, GPIO_Pin_12, 1);
 		break;
@@ -59,7 +57,6 @@ void led_blink(int led)
 		GPIO_WriteBit(GPIOA, GPIO_Pin_11, led_0);
 		led_0 = !led_0;
 		break;
-
 	case 1:
 		GPIO_WriteBit(GPIOA, GPIO_Pin_12, led_1);
 		led_1 = !led_1;

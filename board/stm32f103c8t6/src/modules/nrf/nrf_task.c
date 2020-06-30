@@ -6,12 +6,16 @@
  */
 
 #include <nrf_task.h>
+#include <k_printf.h>
 
 #define CTL_PWM_MAX (2000)
 #define CTL_PWM_MIN (1000)
 #define CTL_PWM_SCALE (CTL_PWM_MAX - CTL_PWM_MIN)
 
-extern float motor_ctl[MOTOR_CNT];
+float ctl_yaw = 0;
+float ctl_thro = 0;
+float ctl_roll = 0;
+float ctl_pitch = 0;
 
 void nrf_pthread(void *arg)
 {
@@ -36,15 +40,14 @@ void nrf_pthread(void *arg)
 
 			if (protocol_parse(ctl) == 0)
 			{
-				float ctl_yaw = ((float)(ctl[0] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
-				float ctl_thro = ((float)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
-				float ctl_roll = ((float)(ctl[2] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
-				float ctl_pitch = ((float)(ctl[3] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+				ctl_yaw = ((float)(ctl[0] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+				ctl_thro = ((float)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+				ctl_roll = ((float)(ctl[2] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+				ctl_pitch = ((float)(ctl[3] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 
-				motor_ctl[0] = ctl_thro;
-				motor_ctl[1] = ctl_thro;
-				motor_ctl[2] = ctl_thro;
-				motor_ctl[3] = ctl_thro;
+				ctl_roll = 1.0f - ctl_roll * 2.0f;
+				ctl_pitch = 1.0f - ctl_pitch * 2.0f;
+				ctl_yaw = 1.0f - ctl_yaw * 2.0f;
 
 				led_blink(1);
 			}

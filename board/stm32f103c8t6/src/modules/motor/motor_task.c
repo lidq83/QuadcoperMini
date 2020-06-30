@@ -31,7 +31,7 @@ static void motor_pthread(void *arg)
 			motor_set_value(fd, i, motor_ctl[i]);
 		}
 
-		sleep_ticks(10);
+		sleep_ticks(20);
 	}
 
 	close(fd);

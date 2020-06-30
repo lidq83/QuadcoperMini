@@ -11,6 +11,10 @@
 #include <typedef.h>
 
 //初始化系统时钟
-void sysclk_init();
+void sysclk_init(void);
+
+void delay_ms(u16 ms);
+
+void delay_us(u32 us);
 
 #endif
