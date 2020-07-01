@@ -46,10 +46,10 @@ void nrf_pthread(void *arg)
 		uint64_t r = current_time();
 		if (r - rt > 1000)
 		{
-			ctl_thro = 0;
-			ctl_roll = 0;
-			ctl_pitch = 0;
-			ctl_yaw = 0;
+			ctl_thro = 0.0f;	//for test
+			ctl_roll = 0.0f;
+			ctl_pitch = 0.0f;
+			ctl_yaw = 0.0f;
 
 			rt = r;
 		}

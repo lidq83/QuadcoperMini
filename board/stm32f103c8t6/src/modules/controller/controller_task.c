@@ -8,14 +8,14 @@
 #include <controller_task.h>
 #include <k_printf.h>
 
-const float param_angle_p = 7.7f;
-const float param_gyro_p = 0.013;
-const float param_gyro_i = 0.0007;
-const float param_gyro_d = 0.005;
+const float param_angle_p = 15.7f;
+const float param_gyro_p = 0.006;
+const float param_gyro_i = 0.0002;
+const float param_gyro_d = 0.001;
 
-const float param_angle_yaw_p = 2.7f;
-const float param_gyro_yaw_p = 0.004;
-const float param_gyro_yaw_i = 0.0001;
+const float param_angle_yaw_p = 15.7f;
+const float param_gyro_yaw_p = 0.006;
+const float param_gyro_yaw_i = 0.0002;
 const float param_gyro_yaw_d = 0.001;
 
 extern float ctl_thro;
@@ -180,16 +180,12 @@ void controller_pthread(void *arg)
 		rate_dval_pitch_last = rate_dval_pitch;
 		rate_dval_yaw_last = rate_dval_yaw;
 
-		// k_printf("%.4f\t %.4f\t%.4f\t%.4f\t%.4f\n", att_angle[1], exp_rate_roll, att_gyro[0], rate_dval_roll, out_control_roll);
-
-		// motor_ctl[0] = ctl_thro - out_control_roll;
-		// motor_ctl[1] = ctl_thro + out_control_roll;
-		// motor_ctl[2] = ctl_thro + out_control_roll;
-		// motor_ctl[3] = ctl_thro - out_control_roll;
 		motor_ctl[0] = ctl_thro - out_control_roll + out_control_pitch - out_control_yaw;
 		motor_ctl[1] = ctl_thro + out_control_roll + out_control_pitch + out_control_yaw;
 		motor_ctl[2] = ctl_thro + out_control_roll - out_control_pitch - out_control_yaw;
 		motor_ctl[3] = ctl_thro - out_control_roll - out_control_pitch + out_control_yaw;
+
+		// k_printf("%.4f\t%.4f\t%.4f\n", exp_rate_roll, rate_dval_roll, out_control_roll);
 
 		// for (int i = 0; i < MOTOR_CNT; i++)
 		// {
