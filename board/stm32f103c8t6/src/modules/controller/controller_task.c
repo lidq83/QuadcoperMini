@@ -8,11 +8,15 @@
 #include <controller_task.h>
 #include <k_printf.h>
 
-const float param_angle_p = 13.7f;
+const float param_angle_p = 7.7f;
+const float param_gyro_p = 0.013;
+const float param_gyro_i = 0.0007;
+const float param_gyro_d = 0.005;
 
-const float param_gyro_p = 0.020;
-const float param_gyro_i = 0.000;
-const float param_gyro_d = 0.03;
+const float param_angle_yaw_p = 2.7f;
+const float param_gyro_yaw_p = 0.004;
+const float param_gyro_yaw_i = 0.0001;
+const float param_gyro_yaw_d = 0.001;
 
 extern float ctl_thro;
 extern float ctl_roll;
@@ -32,6 +36,27 @@ float gyro_pid(float x, float x_last, float *gyro_integral)
 	float val_p = x * param_gyro_p;
 	float val_d = (x - x_last) * param_gyro_d;
 	*gyro_integral += x * param_gyro_i;
+	if (*gyro_integral > 0 && *gyro_integral > val_p)
+	{
+		*gyro_integral = val_p;
+	}
+	if (*gyro_integral < 0 && *gyro_integral < val_p)
+	{
+		*gyro_integral = val_p;
+	}
+	return val_p + (*gyro_integral) + val_d;
+}
+
+float angle_yaw_pid(float x)
+{
+	return x * param_angle_yaw_p;
+}
+
+float gyro_yaw_pid(float x, float x_last, float *gyro_integral)
+{
+	float val_p = x * param_gyro_yaw_p;
+	float val_d = (x - x_last) * param_gyro_yaw_d;
+	*gyro_integral += x * param_gyro_yaw_i;
 	if (*gyro_integral > 0 && *gyro_integral > val_p)
 	{
 		*gyro_integral = val_p;
@@ -138,7 +163,7 @@ void controller_pthread(void *arg)
 		//姿态误差 * P = 角速度期望
 		float exp_rate_roll = angle_pid((ctl_roll - ctl_roll_offset) - (att_angle[1] - att_angle_offset[1]));
 		float exp_rate_pitch = angle_pid((ctl_pitch - ctl_pitch_offset) - (att_angle[0] - att_angle_offset[0]));
-		float exp_rate_yaw = angle_pid((ctl_yaw - ctl_yaw_offset) - (att_angle[2] - att_angle_offset[2]));
+		float exp_rate_yaw = angle_yaw_pid((ctl_yaw - ctl_yaw_offset) - (att_angle[2] - att_angle_offset[2]));
 
 		//内环控制
 		//角速度期望 - 实际 = 误差
@@ -149,7 +174,7 @@ void controller_pthread(void *arg)
 		//PID控制：比例 + 积分 + 微分 = 控制量
 		float out_control_roll = gyro_pid(rate_dval_roll, rate_dval_roll_last, &gyro_integral_roll);
 		float out_control_pitch = gyro_pid(rate_dval_pitch, rate_dval_pitch_last, &gyro_integral_pitch);
-		float out_control_yaw = gyro_pid(rate_dval_yaw, rate_dval_yaw_last, &gyro_integral_yaw);
+		float out_control_yaw = gyro_yaw_pid(rate_dval_yaw, rate_dval_yaw_last, &gyro_integral_yaw);
 
 		rate_dval_roll_last = rate_dval_roll;
 		rate_dval_pitch_last = rate_dval_pitch;
