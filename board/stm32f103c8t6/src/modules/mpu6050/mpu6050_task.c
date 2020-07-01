@@ -13,7 +13,7 @@
 float att_angle[3] = {0};
 float att_gyro[3] = {0};
 
-static float filter = 0.1f;
+static float filter = 0.5f;
 
 static void mpu6050_pthread(void *arg)
 {

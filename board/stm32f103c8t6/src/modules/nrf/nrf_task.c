@@ -32,7 +32,7 @@ void nrf_pthread(void *arg)
 	NRF24L01_Set_Power(POWER_F18DBM);
 	NRF24L01_Set_Speed(SPEED_250K);
 
-	float filter = 0.1f;
+	float filter = 0.5f;
 
 	float ctl_yaw_last = 0;
 	float ctl_thro_last = 0;

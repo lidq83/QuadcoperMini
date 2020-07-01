@@ -8,11 +8,11 @@
 #include <controller_task.h>
 #include <k_printf.h>
 
-const float param_angle_p = 12.7f;
+const float param_angle_p = 13.7f;
 
-const float param_gyro_p = 0.037;
-const float param_gyro_i = 0.0023;
-const float param_gyro_d = 0.007;
+const float param_gyro_p = 0.020;
+const float param_gyro_i = 0.000;
+const float param_gyro_d = 0.03;
 
 extern float ctl_thro;
 extern float ctl_roll;
@@ -161,10 +161,10 @@ void controller_pthread(void *arg)
 		// motor_ctl[1] = ctl_thro + out_control_roll;
 		// motor_ctl[2] = ctl_thro + out_control_roll;
 		// motor_ctl[3] = ctl_thro - out_control_roll;
-		motor_ctl[0] = ctl_thro - out_control_roll + out_control_pitch;
-		motor_ctl[1] = ctl_thro + out_control_roll + out_control_pitch;
-		motor_ctl[2] = ctl_thro + out_control_roll - out_control_pitch;
-		motor_ctl[3] = ctl_thro - out_control_roll - out_control_pitch;
+		motor_ctl[0] = ctl_thro - out_control_roll + out_control_pitch - out_control_yaw;
+		motor_ctl[1] = ctl_thro + out_control_roll + out_control_pitch + out_control_yaw;
+		motor_ctl[2] = ctl_thro + out_control_roll - out_control_pitch - out_control_yaw;
+		motor_ctl[3] = ctl_thro - out_control_roll - out_control_pitch + out_control_yaw;
 
 		// for (int i = 0; i < MOTOR_CNT; i++)
 		// {
