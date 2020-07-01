@@ -16,7 +16,6 @@
 #include <IOI2C.h>
 #include <pwm.h>
 #include <led_task.h>
-#include <motor_task.h>
 #include <nrf_task.h>
 #include <mpu6050_task.h>
 #include <controller_task.h>
@@ -36,20 +35,19 @@ int main(int argc, char *argv[])
 	SystemInit();
 	sysclk_init();
 	rcc_config();
-
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO,ENABLE);
-	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
-
-	kernel_startup();
-
 	led_init();
 	serial1_init();
 	tim2_init();
+
+	//RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);
+	//GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+
+	kernel_startup();
+
 	pwm_init();
 
 	led_task();
 	mpu6050_task();
-	motor_task();
 	nrf_task();
 	controller_task();
 

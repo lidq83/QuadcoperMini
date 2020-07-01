@@ -7,6 +7,7 @@
 
 #include <pcb.h>
 #include <sche.h>
+#include <k_printf.h>
 
 //记录优先级是0~255，第一个1的位置，也就是优先级位置
 const uint8_t map_proi[256] = {

@@ -7,6 +7,8 @@
 
 #include <nrf_task.h>
 #include <k_printf.h>
+#include <led.h>
+#include <tim1.h>
 
 #define CTL_PWM_MAX (2000)
 #define CTL_PWM_MIN (1000)
@@ -30,8 +32,28 @@ void nrf_pthread(void *arg)
 	NRF24L01_Set_Power(POWER_F18DBM);
 	NRF24L01_Set_Speed(SPEED_250K);
 
+	float filter = 0.1f;
+
+	float ctl_yaw_last = 0;
+	float ctl_thro_last = 0;
+	float ctl_roll_last = 0;
+	float ctl_pitch_last = 0;
+
+	uint64_t rt = current_time();
+
 	while (1)
 	{
+		uint64_t r = current_time();
+		if (r - rt > 1000)
+		{
+			ctl_thro = 0;
+			ctl_roll = 0;
+			ctl_pitch = 0;
+			ctl_yaw = 0;
+
+			rt = r;
+		}
+
 		RF24L01_Set_Mode(MODE_RX);
 		int len = NRF24L01_RxPacket(RF24L01RxBuffer);
 		if (len > 0)
@@ -40,14 +62,26 @@ void nrf_pthread(void *arg)
 
 			if (protocol_parse(ctl) == 0)
 			{
-				ctl_yaw = ((float)(ctl[0] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
-				ctl_thro = ((float)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
-				ctl_roll = ((float)(ctl[2] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
-				ctl_pitch = ((float)(ctl[3] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+				float roll = ((float)(ctl[0] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+				float pitch = ((float)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+				float yaw = ((float)(ctl[2] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+				float thro = ((float)(ctl[3] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 
-				ctl_roll = 1.0f - ctl_roll * 2.0f;
-				ctl_pitch = 1.0f - ctl_pitch * 2.0f;
-				ctl_yaw = 1.0f - ctl_yaw * 2.0f;
+				roll = 1.0f - roll * 2.0f;
+				pitch = 1.0f - pitch * 2.0f;
+				yaw = 1.0f - yaw * 2.0f;
+
+				ctl_thro = thro * filter + ctl_thro_last * (1.0f - filter);
+				ctl_roll = roll * filter + ctl_roll_last * (1.0f - filter);
+				ctl_pitch = pitch * filter + ctl_pitch_last * (1.0f - filter);
+				ctl_yaw = yaw * filter + ctl_yaw_last * (1.0f - filter);
+
+				ctl_thro_last = ctl_thro;
+				ctl_roll_last = ctl_roll;
+				ctl_pitch_last = ctl_pitch;
+				ctl_yaw_last = ctl_yaw;
+
+				rt = current_time();
 
 				led_blink(1);
 			}
@@ -59,5 +93,5 @@ void nrf_pthread(void *arg)
 
 void nrf_task(void)
 {
-	pcb_create(PROI_NRF, &nrf_pthread, NULL, 1024);
+	pcb_create(PROI_NRF, &nrf_pthread, NULL, 1200);
 }

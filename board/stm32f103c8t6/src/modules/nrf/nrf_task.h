@@ -13,7 +13,6 @@
 #include <mm.h>
 #include <nrf.h>
 #include <protocol.h>
-#include <motor_task.h>
 
 void nrf_task(void);
 

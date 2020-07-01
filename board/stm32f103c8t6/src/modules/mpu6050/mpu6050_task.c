@@ -13,7 +13,7 @@
 float att_angle[3] = {0};
 float att_gyro[3] = {0};
 
-static float filter = 0.05f;
+static float filter = 0.1f;
 
 static void mpu6050_pthread(void *arg)
 {
@@ -49,5 +49,5 @@ static void mpu6050_pthread(void *arg)
 
 void mpu6050_task(void)
 {
-	pcb_create(PROI_MPU6050, &mpu6050_pthread, NULL, 1200);
+	pcb_create(PROI_MPU6050, &mpu6050_pthread, NULL, 2000);
 }

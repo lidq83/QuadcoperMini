@@ -548,7 +548,8 @@ uint8_t NRF24L01_TxPacket(uint8_t *txbuf, uint8_t Length)
   */
 uint8_t NRF24L01_RxPacket(uint8_t *rxbuf)
 {
-	uint8_t l_Status = 0, l_RxLength = 0, l_100MsTimes = 0;
+	uint8_t l_Status = 0, l_RxLength = 0;
+	uint16_t l_100MsTimes = 0;
 
 	RF24L01_SET_CS_LOW(); //片选
 	drv_spi_read_write_byte(FLUSH_RX);
@@ -558,12 +559,14 @@ uint8_t NRF24L01_RxPacket(uint8_t *rxbuf)
 	{
 		sleep_ticks(10);
 
-		if (500 == l_100MsTimes++) //3s没接收过数据，重新初始化模块
+		if (100 < l_100MsTimes++) //3s没接收过数据，重新初始化模块
 		{
 			NRF24L01_Gpio_Init();
+			NRF24L01_check();
 			RF24L01_Init();
+			RF24LL01_Write_Hopping_Point(64);
+			NRF24L01_Set_Power(POWER_F18DBM);
 			NRF24L01_Set_Speed(SPEED_250K);
-			RF24L01_Set_Mode(MODE_RX);
 
 			break;
 		}

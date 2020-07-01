@@ -50,7 +50,6 @@ CFLAGS		+=	-I./src/drv
 CFLAGS		+=	-I./src/dev
 CFLAGS		+=	-I./src/modules
 CFLAGS		+=	-I./src/modules/led
-CFLAGS		+=	-I./src/modules/motor
 CFLAGS		+=	-I./src/modules/nrf
 CFLAGS		+=	-I./src/modules/mpu6050
 CFLAGS		+=	-I./src/modules/controller
@@ -80,7 +79,6 @@ SRC			+=	./src/main/system_stm32f10x.c
 # Main function
 SRC			+=	./src/main/main.c \
 				./src/modules/led/led_task.c \
-				./src/modules/motor/motor_task.c \
 				./src/modules/nrf/nrf_task.c \
 				./src/modules/mpu6050/mpu6050_task.c \
 				./src/modules/controller/controller_task.c
