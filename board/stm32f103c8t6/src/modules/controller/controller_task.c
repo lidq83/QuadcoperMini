@@ -8,15 +8,15 @@
 #include <controller_task.h>
 #include <k_printf.h>
 
-const float param_angle_p = 15.7f;
-const float param_gyro_p = 0.006;
-const float param_gyro_i = 0.0002;
-const float param_gyro_d = 0.001;
+#define PARAM_ANGLE_P (15.7)
+#define PARAM_GYRO_P (0.003)
+#define PARAM_GYRO_I (0.0002)
+#define PARAM_GYRO_D (0.001)
 
-const float param_angle_yaw_p = 15.7f;
-const float param_gyro_yaw_p = 0.006;
-const float param_gyro_yaw_i = 0.0002;
-const float param_gyro_yaw_d = 0.001;
+#define PARAM_ANGLE_YAW_P (PARAM_ANGLE_P / 2.0)
+#define PARAM_GYRO_YAW_P (PARAM_GYRO_P / 2.0)
+#define PARAM_GYRO_YAW_I (PARAM_GYRO_I / 2.0)
+#define PARAM_GYRO_YAW_D (PARAM_GYRO_D / 2.0)
 
 extern float ctl_thro;
 extern float ctl_roll;
@@ -28,14 +28,14 @@ extern float att_gyro[3];
 
 float angle_pid(float x)
 {
-	return x * param_angle_p;
+	return x * PARAM_ANGLE_P;
 }
 
 float gyro_pid(float x, float x_last, float *gyro_integral)
 {
-	float val_p = x * param_gyro_p;
-	float val_d = (x - x_last) * param_gyro_d;
-	*gyro_integral += x * param_gyro_i;
+	float val_p = x * PARAM_GYRO_P;
+	float val_d = (x - x_last) * PARAM_GYRO_D;
+	*gyro_integral += x * PARAM_GYRO_I;
 	if (*gyro_integral > 0 && *gyro_integral > val_p)
 	{
 		*gyro_integral = val_p;
@@ -49,14 +49,14 @@ float gyro_pid(float x, float x_last, float *gyro_integral)
 
 float angle_yaw_pid(float x)
 {
-	return x * param_angle_yaw_p;
+	return x * PARAM_ANGLE_YAW_P;
 }
 
 float gyro_yaw_pid(float x, float x_last, float *gyro_integral)
 {
-	float val_p = x * param_gyro_yaw_p;
-	float val_d = (x - x_last) * param_gyro_yaw_d;
-	*gyro_integral += x * param_gyro_yaw_i;
+	float val_p = x * PARAM_GYRO_YAW_P;
+	float val_d = (x - x_last) * PARAM_GYRO_YAW_D;
+	*gyro_integral += x * PARAM_GYRO_YAW_I;
 	if (*gyro_integral > 0 && *gyro_integral > val_p)
 	{
 		*gyro_integral = val_p;
@@ -161,9 +161,9 @@ void controller_pthread(void *arg)
 
 		//外环控制
 		//姿态误差 * P = 角速度期望
-		float exp_rate_roll = angle_pid((ctl_roll - ctl_roll_offset) - (att_angle[1] - att_angle_offset[1]));
-		float exp_rate_pitch = angle_pid((ctl_pitch - ctl_pitch_offset) - (att_angle[0] - att_angle_offset[0]));
-		float exp_rate_yaw = angle_yaw_pid((ctl_yaw - ctl_yaw_offset) - (att_angle[2] - att_angle_offset[2]));
+		float exp_rate_roll = angle_pid((ctl_roll - ctl_roll_offset) * 0.5f - (att_angle[1] - att_angle_offset[1]));
+		float exp_rate_pitch = angle_pid((ctl_pitch - ctl_pitch_offset) * 0.5f - (att_angle[0] - att_angle_offset[0]));
+		float exp_rate_yaw = angle_yaw_pid((ctl_yaw - ctl_yaw_offset) * 0.5f - (att_angle[2] - att_angle_offset[2]));
 
 		//内环控制
 		//角速度期望 - 实际 = 误差
@@ -185,25 +185,13 @@ void controller_pthread(void *arg)
 		motor_ctl[2] = ctl_thro + out_control_roll - out_control_pitch - out_control_yaw;
 		motor_ctl[3] = ctl_thro - out_control_roll - out_control_pitch + out_control_yaw;
 
-		// k_printf("%.4f\t%.4f\t%.4f\n", exp_rate_roll, rate_dval_roll, out_control_roll);
-
 		// for (int i = 0; i < MOTOR_CNT; i++)
 		// {
 		// 	k_printf("%.4f\t", motor_ctl[i]);
 		// }
 		// k_printf("\n");
 
-		// motor_ctl[0] = 0;
-		// motor_ctl[1] = 0;
-		// motor_ctl[2] = 0;
-		// motor_ctl[3] = 0;
-
-		for (int i = 0; i < MOTOR_CNT; i++)
-		{
-			motor_set_value(fd, i, motor_ctl[i]);
-		}
-
-		if (ctl_thro < 0.1)
+		if (ctl_thro < 0.05)
 		{
 			gyro_integral_roll = 0;
 			gyro_integral_pitch = 0;
@@ -213,11 +201,6 @@ void controller_pthread(void *arg)
 			motor_ctl[1] = 0;
 			motor_ctl[2] = 0;
 			motor_ctl[3] = 0;
-
-			for (int i = 0; i < MOTOR_CNT; i++)
-			{
-				motor_set_value(fd, i, motor_ctl[i]);
-			}
 
 			att_angle_offset[0] = att_angle[0] * filter_offset + att_angle_offset_last[0] * (1.0f - filter_offset);
 			att_angle_offset[1] = att_angle[1] * filter_offset + att_angle_offset_last[1] * (1.0f - filter_offset);
@@ -243,6 +226,35 @@ void controller_pthread(void *arg)
 			ctl_yaw_offset_last = ctl_yaw_offset;
 		}
 
+		for (int i = 0; i < MOTOR_CNT; i++)
+		{
+			motor_set_value(fd, i, motor_ctl[i]);
+		}
+
+		sleep_ticks(20);
+	}
+}
+
+void params_pthread(void *arg)
+{
+	char buff[100] = {0};
+	int len = 0;
+	int cnt = 3;
+	while (1)
+	{
+		len = read(0, buff, 100);
+		if (len == sizeof(float) * cnt + 2)
+		{
+			if (buff[0] == 0x5A && buff[len - 1] == 0xA5)
+			{
+				float *p = (float *)&buff[1];
+				for (int i = 0; i < cnt; i++)
+				{
+					k_printf("%.3f\t", p[i]);
+				}
+				k_printf("\n");
+			}
+		}
 		sleep_ticks(20);
 	}
 }
@@ -250,4 +262,5 @@ void controller_pthread(void *arg)
 void controller_task(void)
 {
 	pcb_create(PROI_CONTROLLER, &controller_pthread, NULL, 1200);
+	pcb_create(PROI_PARAM, &params_pthread, NULL, 1000);
 }
