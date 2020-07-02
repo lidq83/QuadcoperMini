@@ -8,15 +8,15 @@
 #include <controller_task.h>
 #include <k_printf.h>
 
-#define PARAM_ANGLE_P (15.7)
-#define PARAM_GYRO_P (0.003)
-#define PARAM_GYRO_I (0.0002)
-#define PARAM_GYRO_D (0.001)
+static float param_angle_p = 17.0f;
+static float param_gyro_p = 0.0027f;
+static float param_gyro_i = 0.00003;
+static float param_gyro_d = 0.01f;
 
-#define PARAM_ANGLE_YAW_P (PARAM_ANGLE_P / 2.0)
-#define PARAM_GYRO_YAW_P (PARAM_GYRO_P / 2.0)
-#define PARAM_GYRO_YAW_I (PARAM_GYRO_I / 2.0)
-#define PARAM_GYRO_YAW_D (PARAM_GYRO_D / 2.0)
+static float param_angle_yaw_p = 0;
+static float param_gyro_yaw_p = 0;
+static float param_gyro_yaw_i = 0;
+static float param_gyro_yaw_d = 0;
 
 extern float ctl_thro;
 extern float ctl_roll;
@@ -28,14 +28,14 @@ extern float att_gyro[3];
 
 float angle_pid(float x)
 {
-	return x * PARAM_ANGLE_P;
+	return x * param_angle_p;
 }
 
 float gyro_pid(float x, float x_last, float *gyro_integral)
 {
-	float val_p = x * PARAM_GYRO_P;
-	float val_d = (x - x_last) * PARAM_GYRO_D;
-	*gyro_integral += x * PARAM_GYRO_I;
+	float val_p = x * param_gyro_p;
+	float val_d = (x - x_last) * param_gyro_d;
+	*gyro_integral += x * param_gyro_i;
 	if (*gyro_integral > 0 && *gyro_integral > val_p)
 	{
 		*gyro_integral = val_p;
@@ -49,14 +49,14 @@ float gyro_pid(float x, float x_last, float *gyro_integral)
 
 float angle_yaw_pid(float x)
 {
-	return x * PARAM_ANGLE_YAW_P;
+	return x * param_angle_yaw_p;
 }
 
 float gyro_yaw_pid(float x, float x_last, float *gyro_integral)
 {
-	float val_p = x * PARAM_GYRO_YAW_P;
-	float val_d = (x - x_last) * PARAM_GYRO_YAW_D;
-	*gyro_integral += x * PARAM_GYRO_YAW_I;
+	float val_p = x * param_gyro_yaw_p;
+	float val_d = (x - x_last) * param_gyro_yaw_d;
+	*gyro_integral += x * param_gyro_yaw_i;
 	if (*gyro_integral > 0 && *gyro_integral > val_p)
 	{
 		*gyro_integral = val_p;
@@ -156,6 +156,11 @@ void controller_pthread(void *arg)
 
 	while (1)
 	{
+		param_angle_yaw_p = (param_angle_p / 1.0);
+		param_gyro_yaw_p = (param_gyro_p / 1.0);
+		param_gyro_yaw_i = (param_gyro_i / 1.0);
+		param_gyro_yaw_d = (param_gyro_d / 1.0);
+
 		// k_printf("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n", att_angle[0], att_angle[1], att_angle[2], att_gyro[0], att_gyro[1], att_gyro[2]);
 		// k_printf("%.3f\t%.3f\t%.3f\t%.3f\n", ctl_thro, ctl_roll, ctl_pitch, ctl_yaw);
 
@@ -180,16 +185,16 @@ void controller_pthread(void *arg)
 		rate_dval_pitch_last = rate_dval_pitch;
 		rate_dval_yaw_last = rate_dval_yaw;
 
-		motor_ctl[0] = ctl_thro - out_control_roll + out_control_pitch - out_control_yaw;
-		motor_ctl[1] = ctl_thro + out_control_roll + out_control_pitch + out_control_yaw;
-		motor_ctl[2] = ctl_thro + out_control_roll - out_control_pitch - out_control_yaw;
-		motor_ctl[3] = ctl_thro - out_control_roll - out_control_pitch + out_control_yaw;
+		motor_ctl[0] = ctl_thro - out_control_roll / 2 + out_control_pitch / 2 + out_control_yaw / 2;
+		motor_ctl[1] = ctl_thro + out_control_roll / 2 + out_control_pitch / 2 - out_control_yaw / 2;
+		motor_ctl[2] = ctl_thro + out_control_roll / 2 - out_control_pitch / 2 + out_control_yaw / 2;
+		motor_ctl[3] = ctl_thro - out_control_roll / 2 - out_control_pitch / 2 - out_control_yaw / 2;
 
-		// for (int i = 0; i < MOTOR_CNT; i++)
-		// {
-		// 	k_printf("%.4f\t", motor_ctl[i]);
-		// }
-		// k_printf("\n");
+		for (int i = 0; i < MOTOR_CNT; i++)
+		{
+			k_printf("%.4f\t", motor_ctl[i]);
+		}
+		k_printf("\n");
 
 		if (ctl_thro < 0.05)
 		{
@@ -239,7 +244,8 @@ void params_pthread(void *arg)
 {
 	char buff[100] = {0};
 	int len = 0;
-	int cnt = 3;
+	int cnt = 4;
+	uint32_t i = 0;
 	while (1)
 	{
 		len = read(0, buff, 100);
@@ -250,12 +256,21 @@ void params_pthread(void *arg)
 				float *p = (float *)&buff[1];
 				for (int i = 0; i < cnt; i++)
 				{
-					k_printf("%.3f\t", p[i]);
+					k_printf("%.6f\t", p[i]);
 				}
 				k_printf("\n");
+
+				param_angle_p = p[0];
+				param_gyro_p = p[1];
+				param_gyro_i = p[2];
+				param_gyro_d = p[3];
 			}
 		}
-		sleep_ticks(20);
+		if (i++ % 50 == 0)
+		{
+			k_printf("[%.6f\t%.6f\t%.6f\t%.6f]\n", param_angle_p, param_gyro_p, param_gyro_i, param_gyro_d);
+		}
+		sleep_ticks(100);
 	}
 }
 
