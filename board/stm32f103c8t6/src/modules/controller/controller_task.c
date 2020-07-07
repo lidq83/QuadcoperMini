@@ -9,9 +9,9 @@
 #include <k_printf.h>
 
 static float param_angle_p = 17.0f;
-static float param_gyro_p = 0.0027f;
-static float param_gyro_i = 0.00003;
-static float param_gyro_d = 0.01f;
+static float param_gyro_p = 0.00324f;
+static float param_gyro_i = 0.000036;
+static float param_gyro_d = 0.012f;
 
 static float param_angle_yaw_p = 0;
 static float param_gyro_yaw_p = 0;
@@ -36,13 +36,13 @@ float gyro_pid(float x, float x_last, float *gyro_integral)
 	float val_p = x * param_gyro_p;
 	float val_d = (x - x_last) * param_gyro_d;
 	*gyro_integral += x * param_gyro_i;
-	if (*gyro_integral > 0 && *gyro_integral > val_p)
+	if (*gyro_integral > 0 && *gyro_integral > fabs(val_p))
 	{
-		*gyro_integral = val_p;
+		*gyro_integral = fabs(val_p);
 	}
-	if (*gyro_integral < 0 && *gyro_integral < val_p)
+	if (*gyro_integral < 0 && *gyro_integral < -fabs(val_p))
 	{
-		*gyro_integral = val_p;
+		*gyro_integral = -fabs(val_p);
 	}
 	return val_p + (*gyro_integral) + val_d;
 }
@@ -57,13 +57,13 @@ float gyro_yaw_pid(float x, float x_last, float *gyro_integral)
 	float val_p = x * param_gyro_yaw_p;
 	float val_d = (x - x_last) * param_gyro_yaw_d;
 	*gyro_integral += x * param_gyro_yaw_i;
-	if (*gyro_integral > 0 && *gyro_integral > val_p)
+	if (*gyro_integral > 0 && *gyro_integral > fabs(val_p))
 	{
-		*gyro_integral = val_p;
+		*gyro_integral = fabs(val_p);
 	}
-	if (*gyro_integral < 0 && *gyro_integral < val_p)
+	if (*gyro_integral < 0 && *gyro_integral < -fabs(val_p))
 	{
-		*gyro_integral = val_p;
+		*gyro_integral = -fabs(val_p);
 	}
 	return val_p + (*gyro_integral) + val_d;
 }
