@@ -36,13 +36,13 @@ float gyro_pid(float x, float x_last, float *gyro_integral)
 	float val_p = x * param_gyro_p;
 	float val_d = (x - x_last) * param_gyro_d;
 	*gyro_integral += x * param_gyro_i;
-	if (*gyro_integral > 0 && *gyro_integral > fabs(val_p))
+	if (*gyro_integral > 0 && *gyro_integral > fabs(val_p) * 2)
 	{
-		*gyro_integral = fabs(val_p);
+		*gyro_integral = fabs(val_p) * 2;
 	}
-	if (*gyro_integral < 0 && *gyro_integral < -fabs(val_p))
+	if (*gyro_integral < 0 && *gyro_integral < -fabs(val_p) * 2)
 	{
-		*gyro_integral = -fabs(val_p);
+		*gyro_integral = -fabs(val_p) * 2;
 	}
 	return val_p + (*gyro_integral) + val_d;
 }
@@ -57,13 +57,13 @@ float gyro_yaw_pid(float x, float x_last, float *gyro_integral)
 	float val_p = x * param_gyro_yaw_p;
 	float val_d = (x - x_last) * param_gyro_yaw_d;
 	*gyro_integral += x * param_gyro_yaw_i;
-	if (*gyro_integral > 0 && *gyro_integral > fabs(val_p))
+	if (*gyro_integral > 0 && *gyro_integral > fabs(val_p) * 2)
 	{
-		*gyro_integral = fabs(val_p);
+		*gyro_integral = fabs(val_p) * 2;
 	}
-	if (*gyro_integral < 0 && *gyro_integral < -fabs(val_p))
+	if (*gyro_integral < 0 && *gyro_integral < -fabs(val_p) * 2)
 	{
-		*gyro_integral = -fabs(val_p);
+		*gyro_integral = -fabs(val_p) * 2;
 	}
 	return val_p + (*gyro_integral) + val_d;
 }
