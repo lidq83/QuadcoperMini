@@ -9,9 +9,9 @@
 #include <k_printf.h>
 
 static float param_angle_p = 17.0f;
-static float param_gyro_p = 0.00324f;
+static float param_gyro_p = 0.0032f;
 static float param_gyro_i = 0.000036;
-static float param_gyro_d = 0.012f;
+static float param_gyro_d = 0.015f;
 
 static float param_angle_yaw_p = 0;
 static float param_gyro_yaw_p = 0;
@@ -166,9 +166,9 @@ void controller_pthread(void *arg)
 
 		//外环控制
 		//姿态误差 * P = 角速度期望
-		float exp_rate_roll = angle_pid((ctl_roll - ctl_roll_offset) * 0.5f - (att_angle[1] - att_angle_offset[1]));
-		float exp_rate_pitch = angle_pid((ctl_pitch - ctl_pitch_offset) * 0.5f - (att_angle[0] - att_angle_offset[0]));
-		float exp_rate_yaw = angle_yaw_pid((ctl_yaw - ctl_yaw_offset) * 0.5f - (att_angle[2] - att_angle_offset[2]));
+		float exp_rate_roll = angle_pid((ctl_roll - ctl_roll_offset) * 0.3f - (att_angle[1] - att_angle_offset[1]));
+		float exp_rate_pitch = angle_pid((ctl_pitch - ctl_pitch_offset) * 0.3f - (att_angle[0] - att_angle_offset[0]));
+		float exp_rate_yaw = angle_yaw_pid((ctl_yaw - ctl_yaw_offset) * 0.3f - (att_angle[2] - att_angle_offset[2]));
 
 		//内环控制
 		//角速度期望 - 实际 = 误差
