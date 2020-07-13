@@ -23,7 +23,7 @@ int vfs_init(void)
 	vfs = malloc(sizeof(vfs_s));
 	sem_init(&vfs->sem_rw, 1);
 	vfs->root = malloc(sizeof(vfs_node_s));
-	strcpy(vfs->root->name, "/");
+	strncpy(vfs->root->name, "/", NODE_NAME_SIZE);
 	vfs->root->child = NULL;
 	vfs->root->sibling = NULL;
 
@@ -199,7 +199,7 @@ int vfs_insert_node_r(vfs_node_s **node, char *abs_path, file_operations_s ops)
 	}
 
 	vfs_node_s *node_new = malloc(sizeof(vfs_node_s));
-	strcpy(node_new->name, node_name);
+	strncpy(node_new->name, node_name, NODE_NAME_SIZE);
 
 	node_new->child = NULL;
 	node_new->sibling = NULL;
