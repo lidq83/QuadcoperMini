@@ -11,7 +11,7 @@
 static float param_angle_p = 17.0f;
 static float param_gyro_p = 0.0032f;
 static float param_gyro_i = 0.000036;
-static float param_gyro_d = 0.015f;
+static float param_gyro_d = 0.012f;
 
 static float param_angle_yaw_p = 0;
 static float param_gyro_yaw_p = 0;
