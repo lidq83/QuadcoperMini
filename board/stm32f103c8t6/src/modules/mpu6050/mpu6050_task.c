@@ -26,7 +26,7 @@ static void mpu6050_pthread(void *arg)
 	DMP_Init();
 	while (1)
 	{
-		int st = Read_DMP(&values_read[0], &values_read[1], &values_read[2], &values_read[3], &values_read[4], &values_read[5]);
+		int st = Read_DMP(&values_read[0], &values_read[1], &values_read[2], &values_read[4], &values_read[3], &values_read[5]);
 		if (st == 0)
 		{
 			for (int i = 0; i < 6; i++)

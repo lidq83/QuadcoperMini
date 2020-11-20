@@ -13,10 +13,10 @@ static float param_gyro_p = 0.032f;
 static float param_gyro_i = 0.00077;
 static float param_gyro_d = 0.12f;
 
-static float param_angle_yaw_p = 0;
-static float param_gyro_yaw_p = 0;
-static float param_gyro_yaw_i = 0;
-static float param_gyro_yaw_d = 0;
+static float param_angle_yaw_p = 4.0f;
+static float param_gyro_yaw_p = 0.006f;
+static float param_gyro_yaw_i = 0.00012;
+static float param_gyro_yaw_d = 0.057f;
 
 extern float ctl_thro;
 extern float ctl_roll;
@@ -145,20 +145,11 @@ void controller_pthread(void* arg)
 
 	while (1)
 	{
-		// param_angle_yaw_p = (param_angle_p / 1.0);
-		// param_gyro_yaw_p = (param_gyro_p / 1.0);
-		// param_gyro_yaw_i = (param_gyro_i / 1.0);
-		// param_gyro_yaw_d = (param_gyro_d / 1.0);
-
-		// //外环控制
-		// //姿态误差 * P = 角速度期望
-		// float exp_rate_roll = angle_pid((ctl_roll - ctl_roll_offset) * 0.3f - (att_angle[1] - att_angle_offset[1]));
-		// float exp_rate_pitch = angle_pid((ctl_pitch - ctl_pitch_offset) * 0.3f - (att_angle[0] - att_angle_offset[0]));
-		// float exp_rate_yaw = angle_yaw_pid((ctl_yaw - ctl_yaw_offset) * 0.3f - (att_angle[2] - att_angle_offset[2]));
-
-		float exp_rate_roll = 0;
-		float exp_rate_pitch = 0;
-		float exp_rate_yaw = 0;
+		//外环控制
+		//姿态误差 * P = 角速度期望
+		float exp_rate_roll = angle_pid((ctl_roll - ctl_roll_offset) * 0.3f - (att_angle[1] - att_angle_offset[1]));
+		float exp_rate_pitch = angle_pid((ctl_pitch - ctl_pitch_offset) * 0.3f - (att_angle[0] - att_angle_offset[0]));
+		float exp_rate_yaw = angle_yaw_pid((ctl_yaw - ctl_yaw_offset) * 0.3f - (att_angle[2] - att_angle_offset[2]));
 
 		//内环控制
 		//角速度期望 - 实际 = 误差
@@ -212,22 +203,17 @@ void controller_pthread(void* arg)
 			ctl_yaw_offset_last = ctl_yaw_offset;
 
 			//控制量清零
-			motor_ctl[0] = 0;
-			motor_ctl[1] = 0;
-			motor_ctl[2] = 0;
-			motor_ctl[3] = 0;
+			motor_ctl[0] = 0.0f;
+			motor_ctl[1] = 0.0f;
+			motor_ctl[2] = 0.0f;
+			motor_ctl[3] = 0.0f;
 		}
 		else
 		{
-		// 	motor_ctl[0] = ctl_thro - out_control_roll + out_control_pitch + out_control_yaw;
-		// 	motor_ctl[1] = ctl_thro + out_control_roll + out_control_pitch - out_control_yaw;
-		// 	motor_ctl[2] = ctl_thro + out_control_roll - out_control_pitch + out_control_yaw;
-		// 	motor_ctl[3] = ctl_thro - out_control_roll - out_control_pitch - out_control_yaw;
-
-			motor_ctl[0] = 0;
-			motor_ctl[1] = 0;
-			motor_ctl[2] = 0;
-			motor_ctl[3] = 0;
+			motor_ctl[0] = ctl_thro - out_control_roll + out_control_pitch + out_control_yaw;
+			motor_ctl[1] = ctl_thro + out_control_roll + out_control_pitch - out_control_yaw;
+			motor_ctl[2] = ctl_thro + out_control_roll - out_control_pitch + out_control_yaw;
+			motor_ctl[3] = ctl_thro - out_control_roll - out_control_pitch - out_control_yaw;
 		}
 
 		for (int i = 0; i < MOTOR_CNT; i++)
@@ -235,16 +221,16 @@ void controller_pthread(void* arg)
 			motor_set_value(fd, i, motor_ctl[i]);
 		}
 
-		if (tk++ % 5 == 0)
+		if (tk++ % 2 == 0)
 		{
 			// k_printf("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n", att_angle[0], att_angle[1], att_angle[2], att_gyro[0], att_gyro[1], att_gyro[2]);
 			// k_printf("%.3f\t%.3f\t%.3f\t%.3f\n", ctl_thro, ctl_roll, ctl_pitch, ctl_yaw);
 
-			for (int i = 0; i < MOTOR_CNT; i++)
-			{
-				k_printf("%.4f\t", motor_ctl[i]);
-			}
-			k_printf("\n");
+			// for (int i = 0; i < MOTOR_CNT; i++)
+			// {
+			// 	k_printf("%.4f\t", motor_ctl[i]);
+			// }
+			// k_printf("\n");
 		}
 
 		sleep_ticks(20);
