@@ -43,6 +43,7 @@ int main(int argc, char *argv[])
 	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
 
 	kernel_startup();
+	std_init();
 
 	pwm_init();
 

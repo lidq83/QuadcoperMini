@@ -7,8 +7,8 @@
 
 #include <nrf_task.h>
 #include <k_printf.h>
-#include <led.h>
 #include <tim1.h>
+#include <led_task.h>
 
 #define CTL_PWM_MAX (2000)
 #define CTL_PWM_MIN (1000)
@@ -18,6 +18,8 @@ float ctl_yaw = 0;
 float ctl_thro = 0;
 float ctl_roll = 0;
 float ctl_pitch = 0;
+
+extern led_s led;
 
 void nrf_pthread(void *arg)
 {
@@ -46,12 +48,14 @@ void nrf_pthread(void *arg)
 		uint64_t r = current_time();
 		if (r - rt > 1000)
 		{
-			ctl_thro = 0.0f;	//for test
+			ctl_thro = 0.0f;
 			ctl_roll = 0.0f;
 			ctl_pitch = 0.0f;
 			ctl_yaw = 0.0f;
 
 			rt = r;
+
+			led.led_val = 0x05;
 		}
 
 		RF24L01_Set_Mode(MODE_RX);
@@ -83,7 +87,7 @@ void nrf_pthread(void *arg)
 
 				rt = current_time();
 
-				led_blink(1);
+				led.led_val = 0x55;
 			}
 		}
 

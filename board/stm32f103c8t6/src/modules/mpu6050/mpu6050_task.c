@@ -24,7 +24,6 @@ static void mpu6050_pthread(void *arg)
 	IIC_Init();
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
 	DMP_Init();
-
 	while (1)
 	{
 		int st = Read_DMP(&values_read[0], &values_read[1], &values_read[2], &values_read[3], &values_read[4], &values_read[5]);

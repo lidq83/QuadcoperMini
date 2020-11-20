@@ -269,6 +269,7 @@ void MPU6050_initialize(void)
 void DMP_Init(void)
 {
 	u8 temp[1] = {0};
+	k_printf("mpu_set_sensor init.....\r\n");
 	i2cRead(0x68, 0x75, 1, temp);
 	k_printf("mpu_set_sensor complete .%d.....\r\n", (int)temp);
 	if (temp[0] != 0x68)

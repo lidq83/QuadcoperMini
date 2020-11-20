@@ -7,7 +7,7 @@
 
 #include <led_task.h>
 
-static led_s led = {0, 0x05};
+led_s led = {0, 0x05};
 
 void led_pthread(void *arg)
 {
@@ -21,7 +21,7 @@ void led_pthread(void *arg)
 		{
 			led_off(led.led_num);
 		}
-		sleep_ticks(150);
+		sleep_ticks(100);
 	}
 }
 
