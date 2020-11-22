@@ -8,15 +8,15 @@
 #include <controller_task.h>
 #include <k_printf.h>
 
-static float param_angle_p = 17.0f;
-static float param_gyro_p = 0.032f;
-static float param_gyro_i = 0.00077;
-static float param_gyro_d = 0.12f;
+static float param_angle_p = 15.0f;
+static float param_gyro_p = 0.012f;
+static float param_gyro_i = 0.0009;
+static float param_gyro_d = 0.08f;
 
-static float param_angle_yaw_p = 4.0f;
-static float param_gyro_yaw_p = 0.006f;
-static float param_gyro_yaw_i = 0.00012;
-static float param_gyro_yaw_d = 0.057f;
+static float param_angle_yaw_p = 7.5f;
+static float param_gyro_yaw_p = 0.06f;
+static float param_gyro_yaw_i = 0.00045;
+static float param_gyro_yaw_d = 0.04f;
 
 extern float ctl_thro;
 extern float ctl_roll;
@@ -147,9 +147,13 @@ void controller_pthread(void* arg)
 	{
 		//外环控制
 		//姿态误差 * P = 角速度期望
-		float exp_rate_roll = angle_pid((ctl_roll - ctl_roll_offset) * 0.3f - (att_angle[1] - att_angle_offset[1]));
-		float exp_rate_pitch = angle_pid((ctl_pitch - ctl_pitch_offset) * 0.3f - (att_angle[0] - att_angle_offset[0]));
-		float exp_rate_yaw = angle_yaw_pid((ctl_yaw - ctl_yaw_offset) * 0.3f - (att_angle[2] - att_angle_offset[2]));
+		float exp_rate_roll = angle_pid((ctl_roll - ctl_roll_offset) * 0.35f - (att_angle[0] - att_angle_offset[0]));
+		float exp_rate_pitch = angle_pid((ctl_pitch - ctl_pitch_offset) * 0.35f - (att_angle[1] - att_angle_offset[1]));
+		float exp_rate_yaw = angle_yaw_pid((ctl_yaw - ctl_yaw_offset) * 0.35f - (att_angle[2] - att_angle_offset[2]));
+
+		// exp_rate_roll = 0;
+		// exp_rate_pitch = 0;
+		// exp_rate_yaw = 0;
 
 		//内环控制
 		//角速度期望 - 实际 = 误差
@@ -162,12 +166,11 @@ void controller_pthread(void* arg)
 		float out_control_pitch = gyro_pid(rate_dval_pitch, rate_dval_pitch_last, &gyro_integral_pitch, ctl_thro);
 		float out_control_yaw = gyro_yaw_pid(rate_dval_yaw, rate_dval_yaw_last, &gyro_integral_yaw, ctl_thro);
 
+		// k_printf("%.3f\t%.3f\n", rate_dval_roll, out_control_roll);
+
 		rate_dval_roll_last = rate_dval_roll;
 		rate_dval_pitch_last = rate_dval_pitch;
 		rate_dval_yaw_last = rate_dval_yaw;
-
-		out_control_yaw = 0;
-		out_control_pitch = 0;
 
 		if (ctl_thro < 0.05)
 		{
@@ -210,10 +213,15 @@ void controller_pthread(void* arg)
 		}
 		else
 		{
-			motor_ctl[0] = ctl_thro - out_control_roll + out_control_pitch + out_control_yaw;
-			motor_ctl[1] = ctl_thro + out_control_roll + out_control_pitch - out_control_yaw;
-			motor_ctl[2] = ctl_thro + out_control_roll - out_control_pitch + out_control_yaw;
-			motor_ctl[3] = ctl_thro - out_control_roll - out_control_pitch - out_control_yaw;
+			motor_ctl[0] = ctl_thro - out_control_roll - out_control_pitch - out_control_yaw;
+			motor_ctl[1] = ctl_thro + out_control_roll - out_control_pitch + out_control_yaw;
+			motor_ctl[2] = ctl_thro + out_control_roll + out_control_pitch - out_control_yaw;
+			motor_ctl[3] = ctl_thro - out_control_roll + out_control_pitch + out_control_yaw;
+
+			// motor_ctl[0] = 0.0f;
+			// motor_ctl[1] = 0.0f;
+			// motor_ctl[2] = 0.0f;
+			// motor_ctl[3] = 0.0f;
 		}
 
 		for (int i = 0; i < MOTOR_CNT; i++)
@@ -224,7 +232,7 @@ void controller_pthread(void* arg)
 		if (tk++ % 2 == 0)
 		{
 			// k_printf("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n", att_angle[0], att_angle[1], att_angle[2], att_gyro[0], att_gyro[1], att_gyro[2]);
-			// k_printf("%.3f\t%.3f\t%.3f\t%.3f\n", ctl_thro, ctl_roll, ctl_pitch, ctl_yaw);
+			// k_printf("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n", ctl_thro, ctl_roll, ctl_pitch, ctl_yaw);
 
 			// for (int i = 0; i < MOTOR_CNT; i++)
 			// {

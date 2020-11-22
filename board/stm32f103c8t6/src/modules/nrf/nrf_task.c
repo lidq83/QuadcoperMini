@@ -5,10 +5,10 @@
  *      Author: lidq
  */
 
-#include <nrf_task.h>
 #include <k_printf.h>
-#include <tim1.h>
 #include <led_task.h>
+#include <nrf_task.h>
+#include <tim1.h>
 
 #define CTL_PWM_MAX (2000)
 #define CTL_PWM_MIN (1000)
@@ -21,10 +21,10 @@ float ctl_pitch = 0;
 
 extern led_s led;
 
-void nrf_pthread(void *arg)
+void nrf_pthread(void* arg)
 {
-	uint8_t RF24L01RxBuffer[128] = {0};
-	uint16_t ctl[4] = {0};
+	uint8_t RF24L01RxBuffer[128] = { 0 };
+	uint16_t ctl[4] = { 0 };
 
 	drv_spi_init();
 	NRF24L01_Gpio_Init();
@@ -74,6 +74,10 @@ void nrf_pthread(void *arg)
 				roll = 1.0f - roll * 2.0f;
 				pitch = 1.0f - pitch * 2.0f;
 				yaw = 1.0f - yaw * 2.0f;
+
+				roll = roll;
+				pitch = -pitch;
+				yaw = yaw;
 
 				ctl_thro = thro * filter + ctl_thro_last * (1.0f - filter);
 				ctl_roll = roll * filter + ctl_roll_last * (1.0f - filter);
