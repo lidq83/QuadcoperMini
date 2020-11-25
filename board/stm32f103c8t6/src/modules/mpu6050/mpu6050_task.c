@@ -26,7 +26,7 @@ static void mpu6050_pthread(void *arg)
 	DMP_Init();
 	while (1)
 	{
-		int st = Read_DMP(&values_read[0], &values_read[1], &values_read[2], &values_read[4], &values_read[3], &values_read[5]);
+		int st = Read_DMP(&values_read[1], &values_read[0], &values_read[2], &values_read[3], &values_read[4], &values_read[5]);
 		if (st == 0)
 		{
 			for (int i = 0; i < 6; i++)
@@ -36,13 +36,13 @@ static void mpu6050_pthread(void *arg)
 			}
 
 			att_angle[0] = values_filt[0];
-			att_angle[1] = values_filt[1];
-			att_angle[2] = values_filt[2];
+			att_angle[1] = -values_filt[1];
+			att_angle[2] = -values_filt[2];
 			att_gyro[0] = values_filt[3];
-			att_gyro[1] = values_filt[4];
-			att_gyro[2] = values_filt[5];
+			att_gyro[1] = -values_filt[4];
+			att_gyro[2] = -values_filt[5];
 		}
-		sleep_ticks(20);
+		sleep_ticks(10);
 	}
 }
 
