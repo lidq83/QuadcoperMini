@@ -7,6 +7,7 @@
 
 #include <nrf2401.h>
 #include <nrf2401_task.h>
+#include <stdint.h>
 #include <stdio.h>
 
 float ctl_yaw = 0;
@@ -32,7 +33,7 @@ void* nrf2401_pthread(void* arg)
 	float ctl_roll_last = 0;
 	float ctl_pitch_last = 0;
 
-
+	uint32_t tk_recv = 0;
 	while (1)
 	{
 		RF24L01_Set_Mode(MODE_RX);
@@ -44,34 +45,47 @@ void* nrf2401_pthread(void* arg)
 				printf("%02x ", RF24L01RxBuffer[i]);
 			}
 			printf("\n");
-			
-			protocol_append(RF24L01RxBuffer, len);
+			tk_recv = 0;
 
-			if (protocol_parse(ctl) == 0)
-			{
-				float roll = ((float)(ctl[0] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
-				float pitch = ((float)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
-				float yaw = ((float)(ctl[2] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
-				float thro = ((float)(ctl[3] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+			// protocol_append(RF24L01RxBuffer, len);
 
-				roll = 1.0f - roll * 2.0f;
-				pitch = 1.0f - pitch * 2.0f;
-				yaw = 1.0f - yaw * 2.0f;
+			// if (protocol_parse(ctl) == 0)
+			// {
+			// 	float roll = ((float)(ctl[0] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+			// 	float pitch = ((float)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+			// 	float yaw = ((float)(ctl[2] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+			// 	float thro = ((float)(ctl[3] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 
-				ctl_thro = thro * filter + ctl_thro_last * (1.0f - filter);
-				ctl_roll = roll * filter + ctl_roll_last * (1.0f - filter);
-				ctl_pitch = pitch * filter + ctl_pitch_last * (1.0f - filter);
-				ctl_yaw = yaw * filter + ctl_yaw_last * (1.0f - filter);
+			// 	roll = 1.0f - roll * 2.0f;
+			// 	pitch = 1.0f - pitch * 2.0f;
+			// 	yaw = 1.0f - yaw * 2.0f;
 
-				ctl_thro_last = ctl_thro;
-				ctl_roll_last = ctl_roll;
-				ctl_pitch_last = ctl_pitch;
-				ctl_yaw_last = ctl_yaw;
+			// 	ctl_thro = thro * filter + ctl_thro_last * (1.0f - filter);
+			// 	ctl_roll = roll * filter + ctl_roll_last * (1.0f - filter);
+			// 	ctl_pitch = pitch * filter + ctl_pitch_last * (1.0f - filter);
+			// 	ctl_yaw = yaw * filter + ctl_yaw_last * (1.0f - filter);
 
-				printf("%04d %04d %04d %04d\n", ctl[0], ctl[1], ctl[2], ctl[3]);
-			}
+			// 	ctl_thro_last = ctl_thro;
+			// 	ctl_roll_last = ctl_roll;
+			// 	ctl_pitch_last = ctl_pitch;
+			// 	ctl_yaw_last = ctl_yaw;
+
+			// 	printf("%04d %04d %04d %04d\n", ctl[0], ctl[1], ctl[2], ctl[3]);
+			// }
 		}
 
+		printf("%u \n", tk_recv);
+		if (tk_recv > 100)
+		{
+			printf("RF24L01_Init\n");
+			RF24L01_Init();
+			RF24LL01_Write_Hopping_Point(64);
+			NRF24L01_Set_Power(POWER_F18DBM);
+			NRF24L01_Set_Speed(SPEED_250K);
+			tk_recv = 0;
+		}
+
+		tk_recv += 20;
 		sleep_ticks(20);
 	}
 	return NULL;
