@@ -7,9 +7,9 @@
 
 #include <nrf2401.h>
 #include <nrf2401_task.h>
+#include <protocol.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <protocol.h>
 
 float ctl_yaw = 0;
 float ctl_thro = 0;
@@ -43,6 +43,7 @@ void* nrf2401_pthread(void* arg)
 	// uint32_t tk_recv = 0;
 	RF24L01_Set_Mode(MODE_RX);
 
+	uint32_t tk = 0;
 	while (1)
 	{
 		int ret = protocol_parse(ctl);
@@ -67,10 +68,12 @@ void* nrf2401_pthread(void* arg)
 			ctl_pitch_last = ctl_pitch;
 			ctl_yaw_last = ctl_yaw;
 		}
-
-		printf("%04d %04d %04d %04d\n", ctl[0], ctl[1], ctl[2], ctl[3]);
-
-		sleep_ticks(20);
+		if (tk % 2 == 0)
+		{
+			printf("%04d %04d %04d %04d\n", ctl[0], ctl[1], ctl[2], ctl[3]);
+		}
+		tk++;
+		sleep_ticks(5);
 	}
 	return NULL;
 }
