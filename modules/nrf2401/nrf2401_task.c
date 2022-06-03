@@ -74,7 +74,6 @@ void* nrf2401_pthread(void* arg)
 			// }
 		}
 
-		printf("%u \n", tk_recv);
 		if (tk_recv > 100)
 		{
 			printf("RF24L01_Init\n");
