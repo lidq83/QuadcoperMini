@@ -66,6 +66,11 @@ CFLAGS		+=	-I$(MODULES)/controller
 CFLAGS		+=	-I$(MODULES)/nrf2401
 
 #------------------------------------------------------------------------#
+# Libs Path
+LIBS		=	$(ROOTPATH)/libs
+CFLAGS		+=	-I$(LIBS)
+
+#------------------------------------------------------------------------#
 # Main Board
 SRC			+=	$(SRCS)/main.c
 
@@ -81,6 +86,13 @@ SRC			+=	$(DRVS)/led/led.c \
 SRC			+=	$(MODULES)/led/led_task.c \
 				$(MODULES)/controller/controller_task.c \
 				$(MODULES)/nrf2401/nrf2401_task.c
+
+#------------------------------------------------------------------------#
+# Libs
+SRC			+=	$(LIBS)/buff_s.c \
+				$(LIBS)/crc.c \
+				$(LIBS)/protocol.c \
+				$(LIBS)/rand.c
 
 #------------------------------------------------------------------------#
 # System
