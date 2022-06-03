@@ -13,8 +13,8 @@
 
 #define BUFF_SIZE (256)
 
-#define P_HEAD_0				0x55
-#define P_HEAD_1				0xAA
+#define P_HEAD_0				0xA5
+#define P_HEAD_1				0x5A
 #define P_SIZE_HEAD				2
 #define P_SIZE_DATA				8
 #define P_SIZE_CRC				2

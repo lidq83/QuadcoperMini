@@ -562,32 +562,33 @@ uint8_t NRF24L01_TxPacket(uint8_t *txbuf, uint8_t Length)
 	RF24L01_SET_CE_LOW();
 	NRF24L01_Write_Buf(WR_TX_PLOAD, txbuf, Length); //写数据到TX BUF 32字节  TX_PLOAD_WIDTH
 	RF24L01_SET_CE_HIGH();							//启动发送
-	while (0 != RF24L01_GET_IRQ_STATUS())
-	{
-		sleep_ticks(1);
-		if (500 == l_MsTimes++) //500ms还没有发送成功，重新初始化设备
-		{
-			RF24L01_Init();
-			RF24L01_Set_Mode(MODE_TX);
-			NRF24L01_Set_Power(POWER_F18DBM);
-			NRF24L01_Set_Speed(SPEED_250K);
-			break;
-		}
-	}
-	l_Status = NRF24L01_Read_Reg(STATUS); //读状态寄存器
-	NRF24L01_Write_Reg(STATUS, l_Status); //清除TX_DS或MAX_RT中断标志
+	// while (0 != RF24L01_GET_IRQ_STATUS())
+	// {
+	// 	sleep_ticks(1);
+	// 	if (500 == l_MsTimes++) //500ms还没有发送成功，重新初始化设备
+	// 	{
+	// 		RF24L01_Init();
+	// 		RF24L01_Set_Mode(MODE_TX);
+	// 		NRF24L01_Set_Power(POWER_F18DBM);
+	// 		NRF24L01_Set_Speed(SPEED_250K);
+	// 		break;
+	// 	}
+	// }
+	// l_Status = NRF24L01_Read_Reg(STATUS); //读状态寄存器
+	// NRF24L01_Write_Reg(STATUS, l_Status); //清除TX_DS或MAX_RT中断标志
 
-	if (l_Status & MAX_TX) //达到最大重发次数
-	{
-		NRF24L01_Write_Reg(FLUSH_TX, 0xff); //清除TX FIFO寄存器
-		return MAX_TX;
-	}
-	if (l_Status & TX_OK) //发送完成
-	{
-		return TX_OK;
-	}
+	// if (l_Status & MAX_TX) //达到最大重发次数
+	// {
+	// 	NRF24L01_Write_Reg(FLUSH_TX, 0xff); //清除TX FIFO寄存器
+	// 	return MAX_TX;
+	// }
+	// if (l_Status & TX_OK) //发送完成
+	// {
+	// 	return TX_OK;
+	// }
+	return TX_OK;
 
-	return 0xFF; //其他原因发送失败
+	// return 0xFF; //其他原因发送失败
 }
 
 /**
