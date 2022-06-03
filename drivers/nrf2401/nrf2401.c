@@ -498,12 +498,12 @@ void NRF24L01_check(void)
 
 		if (5 == i)
 		{
-			// printf("nrf check OK.\n");
+			printf("nrf check OK.\n");
 			break;
 		}
 		else
 		{
-			// printf("nrf check error.\n");
+			printf("nrf check error.\n");
 		}
 		NRF2401_DELAY(1500);
 	}
