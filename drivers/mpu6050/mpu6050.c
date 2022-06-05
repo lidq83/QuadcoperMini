@@ -104,7 +104,6 @@ void mpu6050_value(float *x, float *y, float *z, float *gx, float *gy, float *gz
 	}
 	// get current FIFO count
 	fifoCount = mpu6050_getFIFOCount();
-//	printf("fifo count %d\n", fifoCount);
 	if (fifoCount >= 42 && fifoCount % 42 == 0)
 	{
 		short aax, aay, aaz;
@@ -166,7 +165,7 @@ void mpu6050_value(float *x, float *y, float *z, float *gx, float *gy, float *gz
 		*gy = _gy;
 		*gz = _gz;
 	}
-	else if (fifoCount >= 42*4)
+	else if (fifoCount >= 42*20)
 	{
 		mpu6050_resetFIFO();
 		return;

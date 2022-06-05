@@ -16,15 +16,18 @@ float ctl_thro = 0;
 float ctl_roll = 0;
 float ctl_pitch = 0;
 
-uint8_t rx_buff[32] = { 0 };
-uint8_t rx_len = 0;
+sem_t sem_sig = { 0 };
 
 void* nrf2401_pthread(void* arg)
 {
 	protocol_init();
 
-	uint8_t RF24L01RxBuffer[32] = { 0 };
+	sem_init(&sem_sig, 0);
+
 	uint16_t ctl[4] = { 0 };
+
+	uint8_t rx_buff[32] = { 0 };
+	uint8_t rx_len = 0;
 
 	NRF24L01_check();
 	RF24L01_Init();
@@ -43,9 +46,25 @@ void* nrf2401_pthread(void* arg)
 	// uint32_t tk_recv = 0;
 	RF24L01_Set_Mode(MODE_RX);
 
+
+
 	uint32_t tk = 0;
 	while (1)
 	{
+		sem_wait(&sem_sig);
+
+		rx_len = NRF24L01_Read_Reg(R_RX_PL_WID); //读取接收到的数据个数
+		NRF24L01_Read_Buf(RD_RX_PLOAD, rx_buff, rx_len); //接收到数据
+		if (rx_len > 0)
+		{
+			protocol_append(rx_buff, rx_len);
+		}
+
+		NRF24L01_Write_Reg(FLUSH_RX, 0xff); //清除RX FIFO
+		NRF24L01_Clear_IRQ_Flag(IRQ_ALL);
+
+		RF24L01_Set_Mode(MODE_RX);
+
 		int ret = protocol_parse(ctl);
 		if (ret == 0)
 		{
@@ -68,12 +87,9 @@ void* nrf2401_pthread(void* arg)
 			ctl_pitch_last = ctl_pitch;
 			ctl_yaw_last = ctl_yaw;
 		}
-		// if (tk % 2 == 0)
-		// {
-		// 	printf("%04d %04d %04d %04d\n", ctl[0], ctl[1], ctl[2], ctl[3]);
-		// }
-		tk++;
-		sleep_ticks(5);
+
+		// tk++;
+		// sleep_ticks(1);
 	}
 	return NULL;
 }
@@ -87,15 +103,17 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if (GPIO_Pin == GPIO_PIN_10)
 	{
-		rx_len = NRF24L01_Read_Reg(R_RX_PL_WID); //读取接收到的数据个数
-		NRF24L01_Read_Buf(RD_RX_PLOAD, rx_buff, rx_len); //接收到数据
+		// rx_len = NRF24L01_Read_Reg(R_RX_PL_WID); //读取接收到的数据个数
+		// NRF24L01_Read_Buf(RD_RX_PLOAD, rx_buff, rx_len); //接收到数据
 
-		protocol_append(rx_buff, rx_len);
-		rx_len = 0;
+		// protocol_append(rx_buff, rx_len);
+		// rx_len = 0;
 
-		NRF24L01_Write_Reg(FLUSH_RX, 0xff); //清除RX FIFO
-		NRF24L01_Clear_IRQ_Flag(IRQ_ALL);
+		// NRF24L01_Write_Reg(FLUSH_RX, 0xff); //清除RX FIFO
+		// NRF24L01_Clear_IRQ_Flag(IRQ_ALL);
 
-		RF24L01_Set_Mode(MODE_RX);
+		// RF24L01_Set_Mode(MODE_RX);
+
+		sem_post(&sem_sig);
 	}
 }

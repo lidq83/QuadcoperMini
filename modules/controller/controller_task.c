@@ -9,6 +9,11 @@
 #include <mpu6050.h>
 #include <stdio.h>
 
+extern float ctl_yaw;
+extern float ctl_thro;
+extern float ctl_roll;
+extern float ctl_pitch;
+
 void* controller_pthread(void* arg)
 {
 	mpu6050_setup();
@@ -50,10 +55,10 @@ void* controller_pthread(void* arg)
 	while (1)
 	{
 		mpu6050_value(&x, &y, &z, &gx, &gy, &gz, &ax, &ay, &az);
-		// if (tk % 5 == 0)
-		// {
-		// 	printf("%+6d %+6d %+6d\n", (int) (x * 1000), (int) (y * 1000), (int) (z * 1000));
-		// }
+		if (tk % 2 == 0)
+		{
+			printf("%+6d %+6d %+6d    %04d %04d %04d %04d\n", (int) (x * 1000), (int) (y * 1000), (int) (z * 1000), (int)(ctl_thro * 1000), (int)(ctl_roll * 1000), (int)(ctl_pitch * 1000), (int)(ctl_yaw * 1000));
+		}
 		tk++;
 		sleep_ticks(10);
 	}
