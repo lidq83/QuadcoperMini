@@ -31,4 +31,7 @@
 #define CTL_PWM_MIN (800)
 #define CTL_PWM_SCALE (CTL_PWM_MAX - CTL_PWM_MIN)
 
+#define PWM_MAX	(10000)
+#define PWM_MIN (0)
+
 #endif

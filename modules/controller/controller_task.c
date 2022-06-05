@@ -9,6 +9,8 @@
 #include <mpu6050.h>
 #include <stdio.h>
 
+extern TIM_HandleTypeDef htim2;
+
 extern float ctl_yaw;
 extern float ctl_thro;
 extern float ctl_roll;
@@ -24,15 +26,15 @@ float ctl_param_yaw_angle_p = 1.5;
 // 俯仰
 float ctl_param_pitch_rate_p = 0.3;
 float ctl_param_pitch_rate_i = 0.001;
-float ctl_param_pitch_rate_d = 0.07;
+float ctl_param_pitch_rate_d = 0.03;
 // 滚转
 float ctl_param_roll_rate_p = 0.3;
 float ctl_param_roll_rate_i = 0.001;
-float ctl_param_roll_rate_d = 0.07;
+float ctl_param_roll_rate_d = 0.03;
 // 航向
 float ctl_param_yaw_rate_p = 0.1;
 float ctl_param_yaw_rate_i = 0.0003;
-float ctl_param_yaw_rate_d = 0.002;
+float ctl_param_yaw_rate_d = 0.01;
 
 float offset_x = 0;
 float offset_y = 0;
@@ -62,6 +64,8 @@ float devi_yaw_rate_pre = 0;
 
 // 电机控制量
 float ctl_motor[4] = { 0 };
+
+uint32_t ctl_pwm[4] = { 0 };
 
 void ctl_value_limit(float* value, float max, float min)
 {
@@ -97,6 +101,11 @@ float ctl_mixer(float ctl_t, float ctl_r, float ctl_p, float ctl_y, float* ctl_m
 	ctl_motor[1] = ctl_t + ctl_r + ctl_p + ctl_y;
 	ctl_motor[2] = ctl_t + ctl_r - ctl_p - ctl_y;
 	ctl_motor[3] = ctl_t - ctl_r - ctl_p + ctl_y;
+
+	// ctl_motor[0] = ctl_t;
+	// ctl_motor[1] = ctl_t;
+	// ctl_motor[2] = ctl_t;
+	// ctl_motor[3] = ctl_t;
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -148,7 +157,7 @@ void* controller_pthread(void* arg)
 		//读取姿态信息
 		mpu6050_value(&x, &y, &z, &gx, &gy, &gz, &ax, &ay, &az);
 
-		if (ctl_thro < 0.3)
+		if (ctl_thro < 0.1)
 		{
 			offset_x = 0;
 			offset_y = 0;
@@ -157,6 +166,18 @@ void* controller_pthread(void* arg)
 			offset_gx = -gx;
 			offset_gy = -gy;
 			offset_gz = -gz;
+
+			ctl_integral_pitch = 0;
+			ctl_integral_roll = 0;
+			ctl_integral_yaw = 0;
+
+			devi_pitch_angle_pre = 0;
+			devi_roll_angle_pre = 0;
+			devi_yaw_angle_pre = 0;
+
+			devi_pitch_rate_pre = 0;
+			devi_pitch_rate_pre = 0;
+			devi_pitch_rate_pre = 0;
 
 			ctl_mixer(0, 0, 0, 0, ctl_motor);
 		}
@@ -192,6 +213,16 @@ void* controller_pthread(void* arg)
 			printf("%04d %04d %04d %04d\n", (int)(ctl_motor[0] * 1000), (int)(ctl_motor[1] * 1000), (int)(ctl_motor[2] * 1000), (int)(ctl_motor[3] * 1000));
 			// printf("%04d %04d %04d %04d\n", (int)(ctl_thro * 1000), (int)(ctl_roll * 1000), (int)(ctl_pitch * 1000), (int)(ctl_yaw * 1000));
 		}
+
+		for (int i = 0; i < 4; i++)
+		{
+			ctl_pwm[i] = ctl_motor[i] * (PWM_MAX - PWM_MIN) + PWM_MIN;
+		}
+
+		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, ctl_pwm[0]);
+		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, ctl_pwm[1]);
+		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, ctl_pwm[2]);
+		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, ctl_pwm[3]);
 
 		tk++;
 		sleep_ticks(10);
