@@ -50,10 +50,10 @@ void* controller_pthread(void* arg)
 	while (1)
 	{
 		mpu6050_value(&x, &y, &z, &gx, &gy, &gz, &ax, &ay, &az);
-		if (tk % 5 == 0)
-		{
-			// printf("%+6d %+6d %+6d\n", (int) (x * 1000), (int) (y * 1000), (int) (z * 1000));
-		}
+		// if (tk % 5 == 0)
+		// {
+		// 	printf("%+6d %+6d %+6d\n", (int) (x * 1000), (int) (y * 1000), (int) (z * 1000));
+		// }
 		tk++;
 		sleep_ticks(10);
 	}

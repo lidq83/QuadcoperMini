@@ -68,10 +68,10 @@ void* nrf2401_pthread(void* arg)
 			ctl_pitch_last = ctl_pitch;
 			ctl_yaw_last = ctl_yaw;
 		}
-		if (tk % 2 == 0)
-		{
-			printf("%04d %04d %04d %04d\n", ctl[0], ctl[1], ctl[2], ctl[3]);
-		}
+		// if (tk % 2 == 0)
+		// {
+		// 	printf("%04d %04d %04d %04d\n", ctl[0], ctl[1], ctl[2], ctl[3]);
+		// }
 		tk++;
 		sleep_ticks(5);
 	}
