@@ -43,12 +43,8 @@ void* nrf2401_pthread(void* arg)
 	float ctl_roll_last = 0;
 	float ctl_pitch_last = 0;
 
-	// uint32_t tk_recv = 0;
 	RF24L01_Set_Mode(MODE_RX);
 
-
-
-	uint32_t tk = 0;
 	while (1)
 	{
 		sem_wait(&sem_sig);
@@ -88,7 +84,6 @@ void* nrf2401_pthread(void* arg)
 			ctl_yaw_last = ctl_yaw;
 		}
 
-		// tk++;
 		// sleep_ticks(1);
 	}
 	return NULL;
