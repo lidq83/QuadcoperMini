@@ -165,7 +165,7 @@ void mpu6050_value(float *x, float *y, float *z, float *gx, float *gy, float *gz
 		*gy = _gy;
 		*gz = _gz;
 	}
-	else if (fifoCount >= 42*20)
+	else if (fifoCount >= 42*10)
 	{
 		mpu6050_resetFIFO();
 		return;
