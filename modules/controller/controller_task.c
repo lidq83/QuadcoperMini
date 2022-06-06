@@ -16,6 +16,8 @@ extern float ctl_thro;
 extern float ctl_roll;
 extern float ctl_pitch;
 
+float ctl_angle = M_PI / 12.0;  //15度
+
 // [外环角度控制参数
 float ctl_param_roll_angle_p = 1.5;
 float ctl_param_pitch_angle_p = 1.5;
@@ -24,17 +26,17 @@ float ctl_param_yaw_angle_p = 1.5;
 
 // [内环角速度参数
 // 俯仰
-float ctl_param_pitch_rate_p = 0.3;
-float ctl_param_pitch_rate_i = 0.001;
-float ctl_param_pitch_rate_d = 0.03;
+float ctl_param_pitch_rate_p = 0.03;
+float ctl_param_pitch_rate_i = 0.0001;
+float ctl_param_pitch_rate_d = 0.003;
 // 滚转
-float ctl_param_roll_rate_p = 0.3;
-float ctl_param_roll_rate_i = 0.001;
-float ctl_param_roll_rate_d = 0.03;
+float ctl_param_roll_rate_p = 0.03;
+float ctl_param_roll_rate_i = 0.0001;
+float ctl_param_roll_rate_d = 0.003;
 // 航向
-float ctl_param_yaw_rate_p = 0.1;
-float ctl_param_yaw_rate_i = 0.0003;
-float ctl_param_yaw_rate_d = 0.01;
+float ctl_param_yaw_rate_p = 0.01;
+float ctl_param_yaw_rate_i = 0.00003;
+float ctl_param_yaw_rate_d = 0.001;
 
 float offset_x = 0;
 float offset_y = 0;
@@ -97,10 +99,10 @@ float ctl_pid(float devi, float devi_pre, float p, float i, float d, float* inte
 
 float ctl_mixer(float ctl_t, float ctl_r, float ctl_p, float ctl_y, float* ctl_motor)
 {
-	ctl_motor[0] = ctl_t - ctl_r + ctl_p - ctl_y;
-	ctl_motor[1] = ctl_t + ctl_r + ctl_p + ctl_y;
-	ctl_motor[2] = ctl_t + ctl_r - ctl_p - ctl_y;
-	ctl_motor[3] = ctl_t - ctl_r - ctl_p + ctl_y;
+	ctl_motor[0] = ctl_t - ctl_r + ctl_p + ctl_y;
+	ctl_motor[1] = ctl_t + ctl_r + ctl_p - ctl_y;
+	ctl_motor[2] = ctl_t + ctl_r - ctl_p + ctl_y;
+	ctl_motor[3] = ctl_t - ctl_r - ctl_p - ctl_y;
 
 	// ctl_motor[0] = ctl_t;
 	// ctl_motor[1] = ctl_t;
@@ -184,8 +186,8 @@ void* controller_pthread(void* arg)
 		else
 		{
 			//外环PID
-			float ctl_pitch_angle = ctl_pid(ctl_pitch - (offset_x + x), devi_pitch_angle_pre, ctl_param_pitch_angle_p, 0, 0, NULL, 0);
-			float ctl_roll_angle = ctl_pid(ctl_roll - (offset_y + y), devi_roll_angle_pre, ctl_param_roll_angle_p, 0, 0, NULL, 0);
+			float ctl_pitch_angle = ctl_pid(ctl_pitch * ctl_angle - (offset_x + x), devi_pitch_angle_pre, ctl_param_pitch_angle_p, 0, 0, NULL, 0);
+			float ctl_roll_angle = ctl_pid(ctl_roll * ctl_angle - (offset_y + y), devi_roll_angle_pre, ctl_param_roll_angle_p, 0, 0, NULL, 0);
 			float ctl_yaw_angle = ctl_pid(0 - (offset_z + z), devi_yaw_angle_pre, ctl_param_yaw_angle_p, 0, 0, NULL, 0);
 			//内环PID
 			float ctl_pitch_rate = ctl_pid(ctl_pitch_angle - (offset_gx + gx), devi_pitch_rate_pre, ctl_param_pitch_rate_p, ctl_param_pitch_rate_i, ctl_param_pitch_rate_d, &ctl_integral_pitch, ctl_thro);
