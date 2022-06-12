@@ -32,7 +32,7 @@ void* nrf2401_pthread(void* arg)
 	NRF24L01_check();
 	RF24L01_Init();
 	RF24LL01_Write_Hopping_Point(64);
-	NRF24L01_Set_Power(POWER_F18DBM);
+	NRF24L01_Set_Power(POWER_0DBM);
 	NRF24L01_Set_Speed(SPEED_250K);
 
 
@@ -95,9 +95,10 @@ void* nrf2401_protected_pthread(void* arg)
 
 	while (1)
 	{
-		NRF24L01_Write_Reg(FLUSH_RX, 0xff); //清除RX FIFO
-		NRF24L01_Clear_IRQ_Flag(IRQ_ALL);
-		RF24L01_Set_Mode(MODE_RX);
+		// NRF24L01_Write_Reg(FLUSH_RX, 0xff); //清除RX FIFO
+		// NRF24L01_Clear_IRQ_Flag(IRQ_ALL);
+		// RF24L01_Set_Mode(MODE_RX);
+		sem_post(&sem_sig);
 		sleep_ticks(50);
 	}
 	return NULL;
