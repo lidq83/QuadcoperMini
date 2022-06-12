@@ -12,10 +12,10 @@ typedef struct led_s
 
 void led_init(void);
 
-void led_on(void);
+void led_on(int num);
 
-void led_off(void);
+void led_off(int num);
 
-void led_blink(void);
+void led_blink(int num);
 
 #endif

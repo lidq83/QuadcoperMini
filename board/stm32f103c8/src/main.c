@@ -19,7 +19,7 @@ int _kernel_startup = 0;
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_I2C1_Init(void);
+void MX_I2C1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_SPI1_Init(void);
@@ -89,7 +89,7 @@ void SystemClock_Config(void)
  * @param None
  * @retval None
  */
-static void MX_I2C1_Init(void)
+void MX_I2C1_Init(void)
 {
 	hi2c1.Instance = I2C1;
 	hi2c1.Init.ClockSpeed = 100000;
@@ -238,8 +238,8 @@ static void MX_GPIO_Init(void)
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-	/*Configure GPIO pin : PA11 */
-	GPIO_InitStruct.Pin = GPIO_PIN_11;
+	/*Configure GPIO pin : PA11 PA12 */
+	GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

@@ -16,13 +16,14 @@ void* led_pthread(void* arg)
 	{
 		if ((led.led_val >> (i % 8)) & 0x1)
 		{
-			led_on();
+			led_on(0);
 		}
 		else
 		{
-			led_off();
+			led_off(0);
 		}
-
+		led_blink(1);
+		
 		sleep_ticks(100);
 	}
 	return NULL;
