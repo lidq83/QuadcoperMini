@@ -11,10 +11,10 @@
 
 extern TIM_HandleTypeDef htim2;
 
-extern float ctl_yaw;
 extern float ctl_thro;
-extern float ctl_roll;
 extern float ctl_pitch;
+extern float ctl_roll;
+extern float ctl_yaw;
 
 float ctl_angle = M_PI / 12.0; // 15度
 
@@ -22,6 +22,12 @@ float ctl_angle = M_PI / 12.0; // 15度
 float offset_x = 0;
 float offset_y = 0;
 float offset_z = 0;
+float offset_x_pre = 0;
+float offset_y_pre = 0;
+float offset_z_pre = 0;
+float offset_x_filter = 0.03;
+float offset_y_filter = 0.03;
+float offset_z_filter = 0.03;
 // 零偏]
 
 // [角度参数
@@ -93,20 +99,37 @@ float ctl_pid(float devi, float devi_pre, float p, float i, float d, float* inte
 
 float ctl_mixer(float ctl_t, float ctl_p, float ctl_r, float ctl_y, float* ctl_motor)
 {
-	ctl_motor[0] = ctl_t - ctl_r + ctl_p + ctl_y;
-	ctl_motor[1] = ctl_t + ctl_r + ctl_p - ctl_y;
-	ctl_motor[2] = ctl_t + ctl_r - ctl_p + ctl_y;
-	ctl_motor[3] = ctl_t - ctl_r - ctl_p - ctl_y;
-
-	// ctl_motor[0] = ctl_t;
-	// ctl_motor[1] = ctl_t;
-	// ctl_motor[2] = ctl_t;
-	// ctl_motor[3] = ctl_t;
+	ctl_motor[0] = ctl_t + ctl_p + ctl_y;
+	ctl_motor[1] = ctl_t + ctl_r - ctl_y;
+	ctl_motor[2] = ctl_t - ctl_p + ctl_y;
+	ctl_motor[3] = ctl_t - ctl_r - ctl_y;
 
 	for (int i = 0; i < 4; i++)
 	{
 		ctl_value_limit(&ctl_motor[i], 1.0, 0.0);
 	}
+}
+
+void ctl_lock_zero(void)
+{
+	ctl_integral_pitch = 0;
+	ctl_integral_roll = 0;
+	ctl_integral_yaw = 0;
+
+	devi_pitch_angle_pre = 0;
+	devi_roll_angle_pre = 0;
+	devi_yaw_angle_pre = 0;
+}
+
+void ctl_offset(float x, float y, float z)
+{
+	offset_x = x * offset_x_filter + offset_x_pre * (1.0 - offset_x_filter);
+	offset_y = y * offset_y_filter + offset_y_pre * (1.0 - offset_y_filter);
+	offset_z = z * offset_z_filter + offset_z_pre * (1.0 - offset_z_filter);
+
+	offset_x_pre = offset_x;
+	offset_y_pre = offset_y;
+	offset_z_pre = offset_z;
 }
 
 void* controller_pthread(void* arg)
@@ -178,24 +201,15 @@ void* controller_pthread(void* arg)
 
 			if (ctl_thro < ctl_armed_v1)
 			{
-				offset_x = 0;
-				offset_y = 0;
-				offset_z = -z;
-
-				ctl_integral_pitch = 0;
-				ctl_integral_roll = 0;
-				ctl_integral_yaw = 0;
-
-				devi_pitch_angle_pre = 0;
-				devi_roll_angle_pre = 0;
-				devi_yaw_angle_pre = 0;
+				ctl_offset(-x, -y, -z);
+				ctl_lock_zero();
 				ctl_mixer(0, 0, 0, 0, ctl_motor);
 			}
 			else
 			{
 
-				float devi_pitch = ctl_pitch * ctl_angle - (offset_x + x);
-				float devi_roll = ctl_roll * ctl_angle - (offset_y + y);
+				float devi_pitch = (-ctl_pitch) * ctl_angle - (offset_x + x);
+				float devi_roll = (-ctl_roll) * ctl_angle - (offset_y + y);
 				float devi_yaw = 0 - (offset_z + z);
 
 				// PID控制
@@ -236,19 +250,8 @@ void* controller_pthread(void* arg)
 				ctl_armed_val_pre = 0;
 			}
 
-
-			offset_x = 0;
-			offset_y = 0;
-			offset_z = -z;
-
-			ctl_integral_pitch = 0;
-			ctl_integral_roll = 0;
-			ctl_integral_yaw = 0;
-
-			devi_pitch_angle_pre = 0;
-			devi_roll_angle_pre = 0;
-			devi_yaw_angle_pre = 0;
-
+			ctl_offset(-x, -y, -z);
+			ctl_lock_zero();
 			ctl_mixer(0, 0, 0, 0, ctl_motor);
 		}
 
@@ -262,11 +265,12 @@ void* controller_pthread(void* arg)
 		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, ctl_pwm[2]);
 		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, ctl_pwm[3]);
 
-		if (tk % 5 == 0)
+		if (tk % 2 == 0)
 		{
+			printf("%+6d %+6d %+6d ", (int)((offset_x)*1000), (int)((offset_y)*1000), (int)((offset_z)*1000));
 			printf("%+6d %+6d %+6d ", (int)((offset_x + x) * 1000), (int)((offset_y + y) * 1000), (int)((offset_z + z) * 1000));
-			printf("%04d %04d %04d %04d\n", (int)(ctl_motor[0] * 1000), (int)(ctl_motor[1] * 1000), (int)(ctl_motor[2] * 1000), (int)(ctl_motor[3] * 1000));
-			// printf("%04d %04d %04d %04d\n", (int)(ctl_thro * 1000), (int)(ctl_pitch * 1000), (int)(ctl_roll * 1000), (int)(ctl_yaw * 1000));
+			// printf("%04d %04d %04d %04d\n", (int)(ctl_motor[0] * 1000), (int)(ctl_motor[1] * 1000), (int)(ctl_motor[2] * 1000), (int)(ctl_motor[3] * 1000));
+			printf("%04d %04d %04d %04d\n", (int)(ctl_thro * 1000), (int)(ctl_pitch * 1000), (int)(ctl_roll * 1000), (int)(ctl_yaw * 1000));
 		}
 
 		tk++;

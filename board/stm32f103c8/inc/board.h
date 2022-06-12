@@ -13,9 +13,11 @@
 //遥控信号
 #define PCB_NRF_PRIO (1)
 #define PCB_NRF_SIZE (800)
+#define PCB_NRF_PT_PRIO (2)
+#define PCB_NRF_PT_SIZE (600)
 
 // LED灯
-#define PCB_LED_PRIO (2)
+#define PCB_LED_PRIO (3)
 #define PCB_LED_SIZE (600)
 
 

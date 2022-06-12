@@ -656,7 +656,12 @@ void RF24L01_Init(void)
 
 #elif DYNAMIC_PACKET == 0
 
-	L01_WriteSingleReg(L01REG_RX_PW_P0, FIXED_PACKET_LEN); //固定数据长度
+	NRF24L01_Write_Reg(RX_PW_P0, FIXED_PACKET_LEN); //固定数据长度
+	NRF24L01_Write_Reg(RX_PW_P1, FIXED_PACKET_LEN); //固定数据长度
+	NRF24L01_Write_Reg(RX_PW_P2, FIXED_PACKET_LEN); //固定数据长度
+	NRF24L01_Write_Reg(RX_PW_P3, FIXED_PACKET_LEN); //固定数据长度
+	NRF24L01_Write_Reg(RX_PW_P4, FIXED_PACKET_LEN); //固定数据长度
+	NRF24L01_Write_Reg(RX_PW_P5, FIXED_PACKET_LEN); //固定数据长度
 
 #endif //DYNAMIC_PACKET
 

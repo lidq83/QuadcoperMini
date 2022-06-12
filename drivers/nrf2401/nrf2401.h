@@ -22,7 +22,7 @@
 /** 配置和选项定义 */
 #define DYNAMIC_PACKET 1 // 1:动态数据包, 0:固定
 #define FIXED_PACKET_LEN 12 //包长度
-#define REPEAT_CNT 1 //重复次数
+#define REPEAT_CNT 5 //重复次数
 #define INIT_ADDR 0x3F, 0xAE, 0x90, 0x17, 0x02
 
 /** 口线操作函数定义 */

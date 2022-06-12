@@ -11,10 +11,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
-float ctl_yaw = 0;
 float ctl_thro = 0;
-float ctl_roll = 0;
 float ctl_pitch = 0;
+float ctl_roll = 0;
+float ctl_yaw = 0;
 
 sem_t sem_sig = { 0 };
 
@@ -33,7 +33,7 @@ void* nrf2401_pthread(void* arg)
 	RF24L01_Init();
 	RF24LL01_Write_Hopping_Point(64);
 	NRF24L01_Set_Power(POWER_F18DBM);
-	NRF24L01_Set_Speed(SPEED_1M);
+	NRF24L01_Set_Speed(SPEED_250K);
 
 
 	float filter = 0.5f;
@@ -89,9 +89,24 @@ void* nrf2401_pthread(void* arg)
 	return NULL;
 }
 
+void* nrf2401_protected_pthread(void* arg)
+{
+	sleep_ticks(1000);
+
+	while (1)
+	{
+		NRF24L01_Write_Reg(FLUSH_RX, 0xff); //清除RX FIFO
+		NRF24L01_Clear_IRQ_Flag(IRQ_ALL);
+		RF24L01_Set_Mode(MODE_RX);
+		sleep_ticks(50);
+	}
+	return NULL;
+}
+
 void nrf2401_task(void)
 {
 	pcb_create(PCB_NRF_PRIO, &nrf2401_pthread, NULL, PCB_NRF_SIZE);
+	pcb_create(PCB_NRF_PT_PRIO, &nrf2401_protected_pthread, NULL, PCB_NRF_PT_SIZE);
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
