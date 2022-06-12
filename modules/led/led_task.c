@@ -9,6 +9,7 @@
 #include <led_task.h>
 
 led_s led = { 0, 0x05 };
+extern int ctl_armed;
 
 void* led_pthread(void* arg)
 {
@@ -22,8 +23,16 @@ void* led_pthread(void* arg)
 		{
 			led_off(0);
 		}
-		led_blink(1);
-		
+
+		if (ctl_armed)
+		{
+			led_blink(1);
+		}
+		else
+		{
+			led_on(1);
+		}
+
 		sleep_ticks(100);
 	}
 	return NULL;
