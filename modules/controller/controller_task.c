@@ -16,27 +16,27 @@ extern float ctl_pitch;
 extern float ctl_roll;
 extern float ctl_yaw;
 
-float ctl_angle = M_PI / 12.0; // 15度
+float ctl_angle = M_PI / 6.0; // 30度
 float sqrt_2_2 = 0.707106781; // sqrt(2)/2
 
 // [角度参数
 // 俯仰
-float ctl_param_pitch_angle_p = 2.7;
+float ctl_param_pitch_angle_p = 5.0;
 // 滚转
-float ctl_param_roll_angle_p = 2.7;
+float ctl_param_roll_angle_p = 5.0;
 // 航向
-float ctl_param_yaw_angle_p = 0.5;
+float ctl_param_yaw_angle_p = 0.0;
 // 角度参数]
 
 // [角速度参数
 // 俯仰
-float ctl_param_pitch_rate_p = 0.11;
-float ctl_param_pitch_rate_i = 0.0037;
-float ctl_param_pitch_rate_d = 0.9;
+float ctl_param_pitch_rate_p = 0.015;
+float ctl_param_pitch_rate_i = 0.0007;
+float ctl_param_pitch_rate_d = 0.043;
 // 滚转
-float ctl_param_roll_rate_p = 0.11;
-float ctl_param_roll_rate_i = 0.0037;
-float ctl_param_roll_rate_d = 0.9;
+float ctl_param_roll_rate_p = 0.015;
+float ctl_param_roll_rate_i = 0.0007;
+float ctl_param_roll_rate_d = 0.043;
 // 航向
 float ctl_param_yaw_rate_p = 0.0;
 float ctl_param_yaw_rate_i = 0.0;
@@ -258,9 +258,9 @@ void* controller_pthread(void* arg)
 
 				// [内环PID控制
 				//根据角速度期望计算角度误差
-				float devi_pitch_rate = ctl_pitch_angle - (offset_gx + x);
-				float devi_roll_rate = ctl_roll_angle - (offset_gy + y);
-				float devi_yaw_rate = ctl_yaw_angle - (offset_gz + z);
+				float devi_pitch_rate = ctl_pitch_angle - (offset_gx + gx);
+				float devi_roll_rate = ctl_roll_angle - (offset_gy + gy);
+				float devi_yaw_rate = ctl_yaw_angle - (offset_gz + gz);
 				// PID得到控制量
 				float ctl_pitch_rate = ctl_pid(devi_pitch_rate, devi_pitch_rate_pre, ctl_param_pitch_rate_p, ctl_param_pitch_rate_i, ctl_param_pitch_rate_d, &ctl_integral_rate_pitch, ctl_thro);
 				float ctl_roll_rate = ctl_pid(devi_roll_rate, devi_roll_rate_pre, ctl_param_roll_rate_p, ctl_param_roll_rate_i, ctl_param_roll_rate_d, &ctl_integral_rate_roll, ctl_thro);
