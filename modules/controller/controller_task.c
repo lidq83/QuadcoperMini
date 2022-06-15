@@ -17,6 +17,48 @@ extern float ctl_roll;
 extern float ctl_yaw;
 
 float ctl_angle = M_PI / 12.0; // 15度
+float sqrt_2_2 = 0.707106781; // sqrt(2)/2
+
+// [角度参数
+// 俯仰
+float ctl_param_pitch_angle_p = 2.7;
+// 滚转
+float ctl_param_roll_angle_p = 2.7;
+// 航向
+float ctl_param_yaw_angle_p = 0.5;
+// 角度参数]
+
+// [角速度参数
+// 俯仰
+float ctl_param_pitch_rate_p = 0.11;
+float ctl_param_pitch_rate_i = 0.0037;
+float ctl_param_pitch_rate_d = 0.9;
+// 滚转
+float ctl_param_roll_rate_p = 0.11;
+float ctl_param_roll_rate_i = 0.0037;
+float ctl_param_roll_rate_d = 0.9;
+// 航向
+float ctl_param_yaw_rate_p = 0.0;
+float ctl_param_yaw_rate_i = 0.0;
+float ctl_param_yaw_rate_d = 0.0;
+// 角速度参数]
+
+// [积分项
+float ctl_integral_rate_pitch = 0;
+float ctl_integral_rate_roll = 0;
+float ctl_integral_rate_yaw = 0;
+// 积分项]
+
+// [上一次误差
+float devi_pitch_angle_pre = 0;
+float devi_roll_angle_pre = 0;
+float devi_yaw_angle_pre = 0;
+
+float devi_pitch_rate_pre = 0;
+float devi_roll_rate_pre = 0;
+float devi_yaw_rate_pre = 0;
+
+// 上一次误差]
 
 // [零偏
 float offset_x = 0;
@@ -28,38 +70,22 @@ float offset_z_pre = 0;
 float offset_x_filter = 0.03;
 float offset_y_filter = 0.03;
 float offset_z_filter = 0.03;
+
+float offset_gx = 0;
+float offset_gy = 0;
+float offset_gz = 0;
+float offset_gx_pre = 0;
+float offset_gy_pre = 0;
+float offset_gz_pre = 0;
+float offset_gx_filter = 0.03;
+float offset_gy_filter = 0.03;
+float offset_gz_filter = 0.03;
 // 零偏]
-
-// [角度参数
-// 俯仰
-float ctl_param_pitch_angle_p = 0.9;
-float ctl_param_pitch_angle_i = 0.012;
-float ctl_param_pitch_angle_d = 0.1;
-// 滚转
-float ctl_param_roll_angle_p = 0.9;
-float ctl_param_roll_angle_i = 0.012;
-float ctl_param_roll_angle_d = 0.1;
-// 航向
-float ctl_param_yaw_angle_p = 0.4;
-float ctl_param_yaw_angle_i = 0.003;
-float ctl_param_yaw_angle_d = 0.02;
-// 角度参数]
-
-// [积分项
-float ctl_integral_pitch = 0;
-float ctl_integral_roll = 0;
-float ctl_integral_yaw = 0;
-// 积分项]
-
-// [上一次误差
-float devi_pitch_angle_pre = 0;
-float devi_roll_angle_pre = 0;
-float devi_yaw_angle_pre = 0;
-// 上一次误差]
 
 // 电机控制量
 float ctl_motor[4] = { 0 };
 
+// 最终PWM信号值
 uint32_t ctl_pwm[4] = { 0 };
 
 int ctl_armed = 1;
@@ -92,17 +118,16 @@ float ctl_pid(float devi, float devi_pre, float p, float i, float d, float* inte
 	float val_p = devi * p;
 	float val_i = integral == NULL ? 0 : *integral;
 	float val_d = (devi - devi_pre) * d;
-	float val_ctl = val_p + val_i + val_d;
 
-	return val_ctl;
+	return val_p + val_i + val_d;
 }
 
 float ctl_mixer(float ctl_t, float ctl_p, float ctl_r, float ctl_y, float* ctl_motor)
 {
-	ctl_motor[0] = ctl_t + ctl_p + ctl_y;
-	ctl_motor[1] = ctl_t + ctl_r - ctl_y;
-	ctl_motor[2] = ctl_t - ctl_p + ctl_y;
-	ctl_motor[3] = ctl_t - ctl_r - ctl_y;
+	ctl_motor[0] = ctl_t + (ctl_p * sqrt_2_2) - (ctl_r * sqrt_2_2) + ctl_y;
+	ctl_motor[1] = ctl_t + (ctl_p * sqrt_2_2) + (ctl_r * sqrt_2_2) - ctl_y;
+	ctl_motor[2] = ctl_t - (ctl_p * sqrt_2_2) + (ctl_r * sqrt_2_2) + ctl_y;
+	ctl_motor[3] = ctl_t - (ctl_p * sqrt_2_2) - (ctl_r * sqrt_2_2) - ctl_y;
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -112,24 +137,36 @@ float ctl_mixer(float ctl_t, float ctl_p, float ctl_r, float ctl_y, float* ctl_m
 
 void ctl_lock_zero(void)
 {
-	ctl_integral_pitch = 0;
-	ctl_integral_roll = 0;
-	ctl_integral_yaw = 0;
+	ctl_integral_rate_pitch = 0;
+	ctl_integral_rate_roll = 0;
+	ctl_integral_rate_yaw = 0;
 
 	devi_pitch_angle_pre = 0;
 	devi_roll_angle_pre = 0;
 	devi_yaw_angle_pre = 0;
+
+	devi_pitch_rate_pre = 0;
+	devi_roll_rate_pre = 0;
+	devi_yaw_rate_pre = 0;
 }
 
-void ctl_offset(float x, float y, float z)
+void ctl_offset(float x, float y, float z, float gx, float gy, float gz)
 {
+	//角度
 	offset_x = x * offset_x_filter + offset_x_pre * (1.0 - offset_x_filter);
 	offset_y = y * offset_y_filter + offset_y_pre * (1.0 - offset_y_filter);
 	offset_z = z * offset_z_filter + offset_z_pre * (1.0 - offset_z_filter);
-
 	offset_x_pre = offset_x;
 	offset_y_pre = offset_y;
 	offset_z_pre = offset_z;
+
+	//角速度
+	offset_gx = gx * offset_gx_filter + offset_gx_pre * (1.0 - offset_gx_filter);
+	offset_gy = gy * offset_gy_filter + offset_gy_pre * (1.0 - offset_gy_filter);
+	offset_gz = gz * offset_gz_filter + offset_gz_pre * (1.0 - offset_gz_filter);
+	offset_gx_pre = offset_gx;
+	offset_gy_pre = offset_gy;
+	offset_gz_pre = offset_gz;
 }
 
 void* controller_pthread(void* arg)
@@ -201,30 +238,47 @@ void* controller_pthread(void* arg)
 
 			if (ctl_thro < ctl_armed_v1)
 			{
-				ctl_offset(-x, -y, -z);
+				ctl_offset(-x, -y, -z, -gx, -gy, -gz);
 				ctl_lock_zero();
 				ctl_mixer(0, 0, 0, 0, ctl_motor);
 			}
 			else
 			{
 
-				float devi_pitch = (-ctl_pitch) * ctl_angle - (offset_x + x);
-				float devi_roll = (-ctl_roll) * ctl_angle - (offset_y + y);
-				float devi_yaw = 0 - (offset_z + z);
+				// [外环PID控制
+				//根据角度期望计算角度误差
+				float devi_pitch_angle = (-ctl_pitch) * ctl_angle - (offset_x + x);
+				float devi_roll_angle = (-ctl_roll) * ctl_angle - (offset_y + y);
+				float devi_yaw_angle = 0 - (offset_z + z);
+				// PID得到角速度期望
+				float ctl_pitch_angle = ctl_pid(devi_pitch_angle, devi_pitch_angle_pre, ctl_param_pitch_angle_p, 0, 0, NULL, 0);
+				float ctl_roll_angle = ctl_pid(devi_roll_angle, devi_roll_angle_pre, ctl_param_roll_angle_p, 0, 0, NULL, 0);
+				float ctl_yaw_angle = ctl_pid(devi_yaw_angle, devi_yaw_angle_pre, ctl_param_yaw_angle_p, 0, 0, NULL, 0);
+				// 外环PID控制]
 
-				// PID控制
-				float ctl_pitch_angle = ctl_pid(devi_pitch, devi_pitch_angle_pre, ctl_param_pitch_angle_p, ctl_param_pitch_angle_i, ctl_param_pitch_angle_d, &ctl_integral_pitch, ctl_thro);
-				float ctl_roll_angle = ctl_pid(devi_roll, devi_roll_angle_pre, ctl_param_roll_angle_p, ctl_param_roll_angle_i, ctl_param_roll_angle_d, &ctl_integral_roll, ctl_thro);
-				float ctl_yaw_angle = ctl_pid(devi_yaw, devi_yaw_angle_pre, ctl_param_yaw_angle_p, ctl_param_yaw_angle_i, ctl_param_yaw_angle_d, &ctl_integral_yaw, ctl_thro);
+				// [内环PID控制
+				//根据角速度期望计算角度误差
+				float devi_pitch_rate = ctl_pitch_angle - (offset_gx + x);
+				float devi_roll_rate = ctl_roll_angle - (offset_gy + y);
+				float devi_yaw_rate = ctl_yaw_angle - (offset_gz + z);
+				// PID得到控制量
+				float ctl_pitch_rate = ctl_pid(devi_pitch_rate, devi_pitch_rate_pre, ctl_param_pitch_rate_p, ctl_param_pitch_rate_i, ctl_param_pitch_rate_d, &ctl_integral_rate_pitch, ctl_thro);
+				float ctl_roll_rate = ctl_pid(devi_roll_rate, devi_roll_rate_pre, ctl_param_roll_rate_p, ctl_param_roll_rate_i, ctl_param_roll_rate_d, &ctl_integral_rate_roll, ctl_thro);
+				float ctl_yaw_rate = ctl_pid(devi_yaw_rate, devi_yaw_rate_pre, ctl_param_yaw_rate_p, ctl_param_yaw_rate_i, ctl_param_yaw_rate_d, &ctl_integral_rate_yaw, ctl_thro);
+				// 内环PID控制]
 
 				// [更新误差项
-				devi_pitch_angle_pre = devi_pitch;
-				devi_roll_angle_pre = devi_roll;
-				devi_yaw_angle_pre = devi_yaw;
+				devi_pitch_angle_pre = devi_pitch_angle;
+				devi_roll_angle_pre = devi_roll_angle;
+				devi_yaw_angle_pre = devi_yaw_angle;
+
+				devi_pitch_rate_pre = devi_pitch_rate;
+				devi_roll_rate_pre = devi_roll_rate;
+				devi_yaw_rate_pre = devi_yaw_rate;
 				// 更新误差项]
 
 				//混控
-				ctl_mixer(ctl_thro, ctl_pitch_angle, ctl_roll_angle, ctl_yaw_angle, ctl_motor);
+				ctl_mixer(ctl_thro, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
 			}
 		}
 		//未解锁
@@ -250,7 +304,7 @@ void* controller_pthread(void* arg)
 				ctl_armed_val_pre = 0;
 			}
 
-			ctl_offset(-x, -y, -z);
+			ctl_offset(-x, -y, -z, -gx, -gy, -gz);
 			ctl_lock_zero();
 			ctl_mixer(0, 0, 0, 0, ctl_motor);
 		}
@@ -267,10 +321,10 @@ void* controller_pthread(void* arg)
 
 		if (tk % 2 == 0)
 		{
-			printf("%+6d %+6d %+6d ", (int)((offset_x)*1000), (int)((offset_y)*1000), (int)((offset_z)*1000));
 			printf("%+6d %+6d %+6d ", (int)((offset_x + x) * 1000), (int)((offset_y + y) * 1000), (int)((offset_z + z) * 1000));
+			printf("%+6d %+6d %+6d \n", (int)((offset_gx + gx) * 1000), (int)((offset_gy + gy) * 1000), (int)((offset_gz + gz) * 1000));
 			// printf("%04d %04d %04d %04d\n", (int)(ctl_motor[0] * 1000), (int)(ctl_motor[1] * 1000), (int)(ctl_motor[2] * 1000), (int)(ctl_motor[3] * 1000));
-			printf("%04d %04d %04d %04d\n", (int)(ctl_thro * 1000), (int)(ctl_pitch * 1000), (int)(ctl_roll * 1000), (int)(ctl_yaw * 1000));
+			// printf("%04d %04d %04d %04d\n", (int)(ctl_thro * 1000), (int)(ctl_pitch * 1000), (int)(ctl_roll * 1000), (int)(ctl_yaw * 1000));
 		}
 
 		tk++;
