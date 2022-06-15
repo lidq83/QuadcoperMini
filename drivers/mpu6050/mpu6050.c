@@ -24,14 +24,6 @@ static uint8_t teapotPacket[14] =
 static int cycle_z = 0;
 static float last_z = 0;
 
-//加速度滤波
-static float a_est_devi = 0.0028;
-static float a_measure_devi = 0.09;
-//欧拉角卡尔曼滤波
-static float ax_est = 0.0, ax_devi = 0.0;
-static float ay_est = 0.0, ay_devi = 0.0;
-static float az_est = 0.0, az_devi = 0.0;
-
 static float _x = 0;
 static float _y = 0;
 static float _z = 0;
@@ -143,18 +135,9 @@ void mpu6050_value(float *x, float *y, float *z, float *gx, float *gy, float *gz
 		//		*az = (float) aaReal.z / 163.84;
 
 		mpu6050_dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
-		float vax = (float) aaWorld.x / 163.84;
-		float vay = (float) aaWorld.y / 163.84;
-		float vaz = (float) aaWorld.z / 163.84;
-
-		ax_est = kalman_filter(ax_est, a_est_devi, vax, a_measure_devi, &ax_devi);
-		ay_est = kalman_filter(ay_est, a_est_devi, vay, a_measure_devi, &ay_devi);
-		az_est = kalman_filter(az_est, a_est_devi, vaz, a_measure_devi, &az_devi);
-		*ax = ax_est;
-		*ay = ay_est;
-		*az = az_est;
-
-		//// k_printf("%+9.7f\t%+9.7f\t%+9.7f\n", *ax, *ay, *az);
+		*ax = (float) aaWorld.x / 163.84;
+		*ay = (float) aaWorld.y / 163.84;
+		*az = (float) aaWorld.z / 163.84;
 
 		mpu6050_getRotation(&ggx, &ggy, &ggz);
 		float _gx = (float) (ggx) / 131.0;

@@ -94,6 +94,11 @@ float ctl_armed_val = 0;
 float ctl_armed_val_pre = 0;
 float ctl_armed_val_filter = 0.03;
 
+float mpu_value[9] = { 0 };
+float xyz_value[9] = { 0 };
+float xyz_value_pre[9] = { 0 };
+float xyz_value_filter[9] = { 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 };
+
 void ctl_value_limit(float* value, float max, float min)
 {
 	if (*value > max)
@@ -171,16 +176,6 @@ void* controller_pthread(void* arg)
 {
 	mpu6050_setup();
 
-	float x = 0;
-	float y = 0;
-	float z = 0;
-	float gx = 0;
-	float gy = 0;
-	float gz = 0;
-	float ax = 0;
-	float ay = 0;
-	float az = 0;
-
 	float sx = 0;
 	float sy = 0;
 	float sz = 0;
@@ -189,10 +184,10 @@ void* controller_pthread(void* arg)
 
 	while (tk++ < 20)
 	{
-		mpu6050_value(&x, &y, &z, &gx, &gy, &gz, &ax, &ay, &az);
-		sx += x;
-		sy += y;
-		sz += z;
+		mpu6050_value(&mpu_value[0], &mpu_value[1], &mpu_value[2], &mpu_value[3], &mpu_value[4], &mpu_value[5], &mpu_value[6], &mpu_value[7], &mpu_value[8]);
+		sx += mpu_value[0];
+		sy += mpu_value[1];
+		sz += mpu_value[2];
 		sleep_ticks(5);
 	}
 
@@ -209,7 +204,22 @@ void* controller_pthread(void* arg)
 	while (1)
 	{
 		//读取姿态信息
-		mpu6050_value(&x, &y, &z, &gx, &gy, &gz, &ax, &ay, &az);
+		mpu6050_value(&mpu_value[0], &mpu_value[1], &mpu_value[2], &mpu_value[3], &mpu_value[4], &mpu_value[5], &mpu_value[6], &mpu_value[7], &mpu_value[8]);
+
+		for (int i = 0; i < 9; i++)
+		{
+			xyz_value[i] = mpu_value[i] * xyz_value_filter[i] + xyz_value_pre[i] * (1.0 - xyz_value_filter[i]);
+			xyz_value_pre[i] = xyz_value[i];
+		}
+
+		float x = xyz_value[0];
+		float y = xyz_value[1];
+		float z = xyz_value[2];
+
+		float gx = xyz_value[3];
+		float gy = xyz_value[4];
+		float gz = xyz_value[5];
+
 
 		//已解锁
 		if (ctl_armed)
