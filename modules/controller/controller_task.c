@@ -25,22 +25,22 @@ float ctl_param_pitch_angle_p = 5.0;
 // 滚转
 float ctl_param_roll_angle_p = 5.0;
 // 航向
-float ctl_param_yaw_angle_p = 0.0;
+float ctl_param_yaw_angle_p = 1.0;
 // 角度参数]
 
 // [角速度参数
 // 俯仰
 float ctl_param_pitch_rate_p = 0.015;
 float ctl_param_pitch_rate_i = 0.0007;
-float ctl_param_pitch_rate_d = 0.043;
+float ctl_param_pitch_rate_d = 0.03;
 // 滚转
 float ctl_param_roll_rate_p = 0.015;
 float ctl_param_roll_rate_i = 0.0007;
-float ctl_param_roll_rate_d = 0.043;
+float ctl_param_roll_rate_d = 0.03;
 // 航向
-float ctl_param_yaw_rate_p = 0.0;
-float ctl_param_yaw_rate_i = 0.0;
-float ctl_param_yaw_rate_d = 0.0;
+float ctl_param_yaw_rate_p = 0.0075;
+float ctl_param_yaw_rate_i = 0.00035;
+float ctl_param_yaw_rate_d = 0.015;
 // 角速度参数]
 
 // [积分项
