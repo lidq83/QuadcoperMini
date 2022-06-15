@@ -5,6 +5,7 @@
  *      Author: lidq
  */
 
+#include <math.h>
 #include <nrf2401.h>
 #include <nrf2401_task.h>
 #include <protocol.h>
@@ -16,7 +17,8 @@ float ctl_pitch = 0;
 float ctl_roll = 0;
 float ctl_yaw = 0;
 
-sem_t sem_sig = { 0 };
+static sem_t sem_sig = { 0 };
+static uint32_t tk_recv = 0;
 
 void* nrf2401_pthread(void* arg)
 {
@@ -64,14 +66,30 @@ void* nrf2401_pthread(void* arg)
 		int ret = protocol_parse(ctl);
 		if (ret == 0)
 		{
+			tk_recv = HAL_GetTick();
+
 			float roll = ((float)(ctl[0] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 			float pitch = ((float)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 			float yaw = ((float)(ctl[2] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 			float thro = ((float)(ctl[3] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 
-			roll = 1.0f - roll * 2.0f;
 			pitch = 1.0f - pitch * 2.0f;
+			roll = 1.0f - roll * 2.0f;
 			yaw = 1.0f - yaw * 2.0f;
+
+			// if (fabs(pitch) < 0.1)
+			// {
+			// 	pitch = 0;
+			// }
+			// if (fabs(roll) < 0.1)
+			// {
+			// 	roll = 0;
+			// }
+
+			if (fabs(yaw) < 0.1)
+			{
+				yaw = 0;
+			}
 
 			ctl_thro = thro * filter + ctl_thro_last * (1.0f - filter);
 			ctl_roll = roll * filter + ctl_roll_last * (1.0f - filter);
@@ -95,11 +113,17 @@ void* nrf2401_protected_pthread(void* arg)
 
 	while (1)
 	{
-		// NRF24L01_Write_Reg(FLUSH_RX, 0xff); //清除RX FIFO
-		// NRF24L01_Clear_IRQ_Flag(IRQ_ALL);
-		// RF24L01_Set_Mode(MODE_RX);
+		uint32_t tk_now = HAL_GetTick();
+		if (tk_now - tk_recv > 1000)
+		{
+			ctl_thro = 0;
+			ctl_pitch = 0;
+			ctl_roll = 0;
+			ctl_yaw = 0;
+		}
+
 		sem_post(&sem_sig);
-		sleep_ticks(50);
+		sleep_ticks(100);
 	}
 	return NULL;
 }

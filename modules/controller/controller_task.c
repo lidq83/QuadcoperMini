@@ -18,28 +18,31 @@ extern float ctl_yaw;
 
 float ctl_angle = M_PI / 6.0; // 30度
 float sqrt_2_2 = 0.707106781; // sqrt(2)/2
+//航向期望角度
+float ctl_yaw_angle_param = 2.0 * M_PI / 180.0;
+float ctl_yaw_angle_expect = 0;
 
 // [角度参数
 // 俯仰
-float ctl_param_pitch_angle_p = 5.0;
+float ctl_param_pitch_angle_p = 7.0;
 // 滚转
-float ctl_param_roll_angle_p = 5.0;
+float ctl_param_roll_angle_p = 7.0;
 // 航向
-float ctl_param_yaw_angle_p = 1.0;
+float ctl_param_yaw_angle_p = 3.7;
 // 角度参数]
 
 // [角速度参数
 // 俯仰
-float ctl_param_pitch_rate_p = 0.015;
-float ctl_param_pitch_rate_i = 0.0007;
+float ctl_param_pitch_rate_p = 0.017;
+float ctl_param_pitch_rate_i = 0.0005;
 float ctl_param_pitch_rate_d = 0.03;
 // 滚转
-float ctl_param_roll_rate_p = 0.015;
-float ctl_param_roll_rate_i = 0.0007;
+float ctl_param_roll_rate_p = 0.017;
+float ctl_param_roll_rate_i = 0.0005;
 float ctl_param_roll_rate_d = 0.03;
 // 航向
-float ctl_param_yaw_rate_p = 0.0075;
-float ctl_param_yaw_rate_i = 0.00035;
+float ctl_param_yaw_rate_p = 0.01;
+float ctl_param_yaw_rate_i = 0.0002;
 float ctl_param_yaw_rate_d = 0.015;
 // 角速度参数]
 
@@ -89,8 +92,8 @@ float ctl_motor[4] = { 0 };
 uint32_t ctl_pwm[4] = { 0 };
 
 int ctl_armed = 1;
-float ctl_armed_v1 = 0.15;
-float ctl_armed_v2 = 0.85;
+float ctl_armed_v1 = 0.1;
+float ctl_armed_v2 = 0.9;
 float ctl_armed_val = 0;
 float ctl_armed_val_pre = 0;
 float ctl_armed_val_filter = 0.03;
@@ -148,6 +151,8 @@ void ctl_lock_zero(void)
 	devi_pitch_rate_pre = 0;
 	devi_roll_rate_pre = 0;
 	devi_yaw_rate_pre = 0;
+
+	ctl_yaw_angle_expect = 0;
 }
 
 void ctl_offset(float x, float y, float z, float gx, float gy, float gz)
@@ -244,12 +249,13 @@ void* controller_pthread(void* arg)
 			}
 			else
 			{
+				ctl_yaw_angle_expect += ctl_yaw * ctl_yaw_angle_param;
 
 				// [外环PID控制
 				//根据角度期望计算角度误差
 				float devi_pitch_angle = (-ctl_pitch) * ctl_angle - (offset_x + x);
 				float devi_roll_angle = (-ctl_roll) * ctl_angle - (offset_y + y);
-				float devi_yaw_angle = 0 - (offset_z + z);
+				float devi_yaw_angle = ctl_yaw_angle_expect - (offset_z + z);
 				// PID得到角速度期望
 				float ctl_pitch_angle = ctl_pid(devi_pitch_angle, devi_pitch_angle_pre, ctl_param_pitch_angle_p, 0, 0, NULL, 0);
 				float ctl_roll_angle = ctl_pid(devi_roll_angle, devi_roll_angle_pre, ctl_param_roll_angle_p, 0, 0, NULL, 0);
@@ -319,10 +325,10 @@ void* controller_pthread(void* arg)
 		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, ctl_pwm[2]);
 		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, ctl_pwm[3]);
 
-		if (tk % 2 == 0)
+		if (tk % 5 == 0)
 		{
-			printf("%+6d %+6d %+6d ", (int)((offset_x + x) * 1000), (int)((offset_y + y) * 1000), (int)((offset_z + z) * 1000));
-			printf("%+6d %+6d %+6d \n", (int)((offset_gx + gx) * 1000), (int)((offset_gy + gy) * 1000), (int)((offset_gz + gz) * 1000));
+			// printf("%+6d %+6d %+6d ", (int)((offset_x + x) * 1000), (int)((offset_y + y) * 1000), (int)((offset_z + z) * 1000));
+			// printf("%+6d %+6d %+6d \n", (int)((offset_gx + gx) * 1000), (int)((offset_gy + gy) * 1000), (int)((offset_gz + gz) * 1000));
 			// printf("%04d %04d %04d %04d\n", (int)(ctl_motor[0] * 1000), (int)(ctl_motor[1] * 1000), (int)(ctl_motor[2] * 1000), (int)(ctl_motor[3] * 1000));
 			// printf("%04d %04d %04d %04d\n", (int)(ctl_thro * 1000), (int)(ctl_pitch * 1000), (int)(ctl_roll * 1000), (int)(ctl_yaw * 1000));
 		}
