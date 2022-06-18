@@ -38,7 +38,7 @@ void* nrf2401_pthread(void* arg)
 	NRF24L01_Set_Speed(SPEED_250K);
 
 
-	float filter = 0.5f;
+	float filter = 0.5f; 
 
 	float ctl_yaw_last = 0;
 	float ctl_thro_last = 0;
@@ -77,16 +77,15 @@ void* nrf2401_pthread(void* arg)
 			roll = 1.0f - roll * 2.0f;
 			yaw = 1.0f - yaw * 2.0f;
 
-			// if (fabs(pitch) < 0.1)
-			// {
-			// 	pitch = 0;
-			// }
-			// if (fabs(roll) < 0.1)
-			// {
-			// 	roll = 0;
-			// }
-
-			if (fabs(yaw) < 0.1)
+			if (fabs(pitch) < 0.05)
+			{
+				pitch = 0;
+			}
+			if (fabs(roll) < 0.05)
+			{
+				roll = 0;
+			}
+			if (fabs(yaw) < 0.05)
 			{
 				yaw = 0;
 			}

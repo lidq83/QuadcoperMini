@@ -19,6 +19,10 @@ extern float ctl_yaw;
 float ctl_angle = M_PI / 6.0; // 30度
 float sqrt_2_2 = 0.707106781; // sqrt(2)/2
 
+//航向期望角（总和）
+float yaw_expect_rate = 0.010471976; // 30度每秒 = 0.3度/10ms
+float yaw_expect_total = 0;
+
 // [角度参数
 // 俯仰
 float ctl_param_pitch_angle_p = 7.0;
@@ -30,17 +34,17 @@ float ctl_param_yaw_angle_p = 7.0;
 
 // [角速度参数
 // 俯仰
-float ctl_param_pitch_rate_p = 0.017;
-float ctl_param_pitch_rate_i = 0.0005;
-float ctl_param_pitch_rate_d = 0.03;
+float ctl_param_pitch_rate_p = 0.015;
+float ctl_param_pitch_rate_i = 0.00035;
+float ctl_param_pitch_rate_d = 0.023;
 // 滚转
-float ctl_param_roll_rate_p = 0.017;
-float ctl_param_roll_rate_i = 0.0005;
-float ctl_param_roll_rate_d = 0.03;
+float ctl_param_roll_rate_p = 0.015;
+float ctl_param_roll_rate_i = 0.00035;
+float ctl_param_roll_rate_d = 0.023;
 // 航向
 float ctl_param_yaw_rate_p = 0.01;
-float ctl_param_yaw_rate_i = 0.0002;
-float ctl_param_yaw_rate_d = 0.015;
+float ctl_param_yaw_rate_i = 0.00015;
+float ctl_param_yaw_rate_d = 0.007;
 // 角速度参数]
 
 // [积分项
@@ -52,11 +56,11 @@ float ctl_integral_rate_yaw = 0;
 // [上一次误差
 float devi_pitch_angle_pre = 0;
 float devi_roll_angle_pre = 0;
+float devi_yaw_angle_pre = 0;
 
 float devi_pitch_rate_pre = 0;
 float devi_roll_rate_pre = 0;
 float devi_yaw_rate_pre = 0;
-
 // 上一次误差]
 
 // [零偏
@@ -87,17 +91,13 @@ float ctl_motor[4] = { 0 };
 // 最终PWM信号值
 uint32_t ctl_pwm[4] = { 0 };
 
-int ctl_armed = 1;
-float ctl_armed_v1 = 0.1;
-float ctl_armed_v2 = 0.9;
-float ctl_armed_val = 0;
-float ctl_armed_val_pre = 0;
-float ctl_armed_val_filter = 0.03;
-
 float mpu_value[9] = { 0 };
 float xyz_value[9] = { 0 };
 float xyz_value_pre[9] = { 0 };
-float xyz_value_filter[9] = { 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 };
+float xyz_value_filter[9] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 }; //暂不启用低通滤波
+
+int ctl_armed = 1;
+float ctl_armed_limit = 0.1;
 
 void ctl_value_limit(float* value, float max, float min)
 {
@@ -143,6 +143,7 @@ void ctl_lock_zero(void)
 {
 	devi_pitch_angle_pre = 0;
 	devi_roll_angle_pre = 0;
+	devi_yaw_angle_pre = 0;
 
 	devi_pitch_rate_pre = 0;
 	devi_roll_rate_pre = 0;
@@ -151,6 +152,8 @@ void ctl_lock_zero(void)
 	ctl_integral_rate_pitch = 0;
 	ctl_integral_rate_roll = 0;
 	ctl_integral_rate_yaw = 0;
+
+	yaw_expect_total = 0;
 }
 
 void ctl_offset(float x, float y, float z, float gx, float gy, float gz)
@@ -204,12 +207,13 @@ void* controller_pthread(void* arg)
 	while (1)
 	{
 		//读取姿态信息
-		mpu6050_value(&mpu_value[0], &mpu_value[1], &mpu_value[2], &mpu_value[3], &mpu_value[4], &mpu_value[5], &mpu_value[6], &mpu_value[7], &mpu_value[8]);
-
-		for (int i = 0; i < 9; i++)
+		if (mpu6050_value(&mpu_value[0], &mpu_value[1], &mpu_value[2], &mpu_value[3], &mpu_value[4], &mpu_value[5], &mpu_value[6], &mpu_value[7], &mpu_value[8]) == 0)
 		{
-			xyz_value[i] = mpu_value[i] * xyz_value_filter[i] + xyz_value_pre[i] * (1.0 - xyz_value_filter[i]);
-			xyz_value_pre[i] = xyz_value[i];
+			for (int i = 0; i < 9; i++)
+			{
+				xyz_value[i] = mpu_value[i] * xyz_value_filter[i] + xyz_value_pre[i] * (1.0 - xyz_value_filter[i]);
+				xyz_value_pre[i] = xyz_value[i];
+			}
 		}
 
 		float x = xyz_value[0];
@@ -224,27 +228,7 @@ void* controller_pthread(void* arg)
 		//已解锁
 		if (ctl_armed)
 		{
-			if (ctl_thro < ctl_armed_v1 && ctl_yaw > ctl_armed_v2 && ctl_pitch < -ctl_armed_v2 && ctl_roll < -ctl_armed_v2)
-			{
-				ctl_armed_val = 1.0 * ctl_armed_val_filter + ctl_armed_val_pre * (1.0 - ctl_armed_val_filter);
-				ctl_armed_val_pre = ctl_armed_val;
-
-				if (ctl_armed_val > ctl_armed_v2)
-				{
-					ctl_armed_val = 0;
-					ctl_armed_val_pre = 0;
-
-					//锁定
-					ctl_armed = 0;
-				}
-			}
-			else
-			{
-				ctl_armed_val = 0;
-				ctl_armed_val_pre = 0;
-			}
-
-			if (ctl_thro < ctl_armed_v1)
+			if (ctl_thro < ctl_armed_limit)
 			{
 				ctl_offset(-x, -y, -z, -gx, -gy, -gz);
 				ctl_lock_zero();
@@ -252,20 +236,25 @@ void* controller_pthread(void* arg)
 			}
 			else
 			{
+				//角速度期望转为航向角速期望
+				yaw_expect_total += ctl_yaw * yaw_expect_rate;
+
 				// [外环PID控制
 				//根据角度期望计算角度误差
 				float devi_pitch_angle = (-ctl_pitch) * ctl_angle - (offset_x + x);
 				float devi_roll_angle = (-ctl_roll) * ctl_angle - (offset_y + y);
+				float devi_yaw_angle = yaw_expect_total - (offset_z + z);
 				// PID得到角速度期望
 				float ctl_pitch_angle = ctl_pid(devi_pitch_angle, devi_pitch_angle_pre, ctl_param_pitch_angle_p, 0, 0, NULL, 0);
 				float ctl_roll_angle = ctl_pid(devi_roll_angle, devi_roll_angle_pre, ctl_param_roll_angle_p, 0, 0, NULL, 0);
+				float ctl_yaw_angle = ctl_pid(devi_yaw_angle, devi_yaw_angle_pre, ctl_param_yaw_angle_p, 0, 0, NULL, 0);
 				// 外环PID控制]
 
 				// [内环PID控制
 				//根据角速度期望计算角度误差
 				float devi_pitch_rate = ctl_pitch_angle - (offset_gx + gx);
 				float devi_roll_rate = ctl_roll_angle - (offset_gy + gy);
-				float devi_yaw_rate = ctl_yaw * ctl_param_yaw_angle_p - (offset_gz + gz);
+				float devi_yaw_rate = ctl_yaw_angle - (offset_gz + gz);
 				// PID得到控制量
 				float ctl_pitch_rate = ctl_pid(devi_pitch_rate, devi_pitch_rate_pre, ctl_param_pitch_rate_p, ctl_param_pitch_rate_i, ctl_param_pitch_rate_d, &ctl_integral_rate_pitch, ctl_thro);
 				float ctl_roll_rate = ctl_pid(devi_roll_rate, devi_roll_rate_pre, ctl_param_roll_rate_p, ctl_param_roll_rate_i, ctl_param_roll_rate_d, &ctl_integral_rate_roll, ctl_thro);
@@ -288,30 +277,11 @@ void* controller_pthread(void* arg)
 		//未解锁
 		else
 		{
-			if (ctl_thro < ctl_armed_v1 && ctl_yaw < -ctl_armed_v2 && ctl_pitch < -ctl_armed_v2 && ctl_roll > ctl_armed_v2)
-			{
-				ctl_armed_val = 1.0 * ctl_armed_val_filter + ctl_armed_val_pre * (1.0 - ctl_armed_val_filter);
-				ctl_armed_val_pre = ctl_armed_val;
-
-				if (ctl_armed_val > ctl_armed_v2)
-				{
-					ctl_armed_val = 0;
-					ctl_armed_val_pre = 0;
-
-					//解锁
-					ctl_armed = 1;
-				}
-			}
-			else
-			{
-				ctl_armed_val = 0;
-				ctl_armed_val_pre = 0;
-			}
-
 			ctl_offset(-x, -y, -z, -gx, -gy, -gz);
 			ctl_lock_zero();
 			ctl_mixer(0, 0, 0, 0, ctl_motor);
 		}
+
 
 		for (int i = 0; i < 4; i++)
 		{
@@ -322,14 +292,6 @@ void* controller_pthread(void* arg)
 		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, ctl_pwm[1]);
 		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, ctl_pwm[2]);
 		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, ctl_pwm[3]);
-
-		if (tk % 5 == 0)
-		{
-			// printf("%+6d %+6d %+6d ", (int)((offset_x + x) * 1000), (int)((offset_y + y) * 1000), (int)((offset_z + z) * 1000));
-			// printf("%+6d %+6d %+6d \n", (int)((offset_gx + gx) * 1000), (int)((offset_gy + gy) * 1000), (int)((offset_gz + gz) * 1000));
-			// printf("%04d %04d %04d %04d\n", (int)(ctl_motor[0] * 1000), (int)(ctl_motor[1] * 1000), (int)(ctl_motor[2] * 1000), (int)(ctl_motor[3] * 1000));
-			// printf("%04d %04d %04d %04d\n", (int)(ctl_thro * 1000), (int)(ctl_pitch * 1000), (int)(ctl_roll * 1000), (int)(ctl_yaw * 1000));
-		}
 
 		tk++;
 		sleep_ticks(10);

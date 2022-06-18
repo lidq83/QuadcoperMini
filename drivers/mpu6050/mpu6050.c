@@ -87,12 +87,12 @@ int mpu6050_setup(void)
 
 uint32_t i = 0;
 
-void mpu6050_value(float *x, float *y, float *z, float *gx, float *gy, float *gz, float *ax, float *ay, float *az)
+int mpu6050_value(float *x, float *y, float *z, float *gx, float *gy, float *gz, float *ax, float *ay, float *az)
 {
 	// if programming failed, don't try to do anything
 	if (!dmpReady)
 	{
-		return;
+		return -1;
 	}
 	// get current FIFO count
 	fifoCount = mpu6050_getFIFOCount();
@@ -117,6 +117,12 @@ void mpu6050_value(float *x, float *y, float *z, float *gx, float *gy, float *gz
 		else if (ypr[0] - last_z > M_PI)
 		{
 			cycle_z--;
+		}
+
+		// Error Data
+		if (ypr[1] > 2*M_PI || ypr[1] < -2*M_PI || ypr[2] > 2*M_PI || ypr[2] < -2*M_PI)
+		{
+			return -1;
 		}
 
 		*x = ypr[2];
@@ -147,13 +153,17 @@ void mpu6050_value(float *x, float *y, float *z, float *gx, float *gy, float *gz
 		*gx = _gx;
 		*gy = _gy;
 		*gz = _gz;
+
+		return 0;
 	}
 	else if (fifoCount >= 42 * 8)
 	{
 		mpu6050_resetFIFO();
-		return;
+		return -1;;
 		// // k_printf("FIFO overflow!\n");
 	}
+
+	return -1;
 }
 
 /***

@@ -7,7 +7,7 @@
 
 int mpu6050_setup(void);
 
-void mpu6050_value(float* x, float* y, float* z, float* gx, float* gy, float* gz, float* ax, float* ay, float* az);
+int mpu6050_value(float* x, float* y, float* z, float* gx, float* gy, float* gz, float* ax, float* ay, float* az);
 
 /***
  * est预估值
