@@ -38,7 +38,7 @@ void* nrf2401_pthread(void* arg)
 	NRF24L01_Set_Speed(SPEED_250K);
 
 
-	float filter = 0.5f; 
+	float filter = 0.3f; 
 
 	float ctl_yaw_last = 0;
 	float ctl_thro_last = 0;
