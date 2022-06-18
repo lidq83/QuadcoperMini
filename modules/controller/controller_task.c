@@ -16,7 +16,7 @@ extern float ctl_pitch;
 extern float ctl_roll;
 extern float ctl_yaw;
 
-float ctl_angle = M_PI / 4.0; // 30度
+float ctl_angle = M_PI / 4.0; // 45度
 float sqrt_2_2 = 0.707106781; // sqrt(2)/2
 
 //航向期望角（总和）
@@ -34,17 +34,17 @@ float ctl_param_yaw_angle_p = 15.0;
 
 // [角速度参数
 // 俯仰
-float ctl_param_pitch_rate_p = 0.017;
-float ctl_param_pitch_rate_i = 0.00035;
-float ctl_param_pitch_rate_d = 0.023;
+float ctl_param_pitch_rate_p = 0.015;
+float ctl_param_pitch_rate_i = 0.0003;
+float ctl_param_pitch_rate_d = 0.015;
 // 滚转
-float ctl_param_roll_rate_p = 0.017;
-float ctl_param_roll_rate_i = 0.00035;
-float ctl_param_roll_rate_d = 0.023;
+float ctl_param_roll_rate_p = 0.015;
+float ctl_param_roll_rate_i = 0.0003;
+float ctl_param_roll_rate_d = 0.015;
 // 航向
 float ctl_param_yaw_rate_p = 0.01;
-float ctl_param_yaw_rate_i = 0.0003;
-float ctl_param_yaw_rate_d = 0.02;
+float ctl_param_yaw_rate_i = 0.0002;
+float ctl_param_yaw_rate_d = 0.01;
 // 角速度参数]
 
 // [积分项
