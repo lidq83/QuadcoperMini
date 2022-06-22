@@ -38,7 +38,7 @@ void* nrf2401_pthread(void* arg)
 	NRF24L01_Set_Speed(SPEED_250K);
 
 
-	float filter = 0.3f; 
+	float filter = 1.0f; //不使用滤波（在发射端已经滤波了）
 
 	float ctl_yaw_last = 0;
 	float ctl_thro_last = 0;
