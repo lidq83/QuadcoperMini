@@ -32,9 +32,9 @@ float ctl_param_yaw_angle_p = 13.0;
 
 // [角速度参数
 // 俯仰 - 滚转
-const float ctl_param_pitch_roll_rate_p = 0.015;
+const float ctl_param_pitch_roll_rate_p = 0.013;
 const float ctl_param_pitch_roll_rate_i = 0.001;
-const float ctl_param_pitch_roll_rate_d = 0.03;
+const float ctl_param_pitch_roll_rate_d = 0.027;
 // 航向
 const float ctl_param_yaw_rate_p = 0.01;
 const float ctl_param_yaw_rate_i = 0.0003;
@@ -171,6 +171,8 @@ void ctl_offset(float x, float y, float z, float gx, float gy, float gz)
 
 void* controller_pthread(void* arg)
 {
+	sleep_ticks(20);
+
 	mpu6050_setup();
 
 	float sx = 0;
@@ -196,11 +198,10 @@ void* controller_pthread(void* arg)
 		{
 		}
 	}
-
+	printf("Init mpu6050 OK.\n");
 
 	while (1)
 	{
-
 		if (!ctl_armed && ctl_thro < ctl_armed_limit && tk > 10)
 		{
 			ctl_armed = 1;
