@@ -16,11 +16,11 @@ extern float ctl_pitch;
 extern float ctl_roll;
 extern float ctl_yaw;
 
-float ctl_angle = M_PI / 6.0; // 30度
+float ctl_angle = 15.0 * M_PI / 180.0;
 float sqrt_2_2 = 0.707106781; // sqrt(2)/2
 
 //航向期望角（总和）
-float yaw_expect_rate = 0.02; // 0.3弧度/10ms
+float yaw_expect_rate = 0.03; // 0.3弧度/10ms
 float yaw_expect_total = 0;
 
 // [角度参数
