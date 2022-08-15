@@ -14,6 +14,10 @@ void led_on(int num)
 	{
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
 	}
+	else if (num == 2)
+	{
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
+	}
 }
 
 void led_off(int num)
@@ -26,6 +30,10 @@ void led_off(int num)
 	{
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_SET);
 	}
+	else if (num == 2)
+	{
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
+	}
 }
 
 void led_blink(int num)
@@ -37,5 +45,9 @@ void led_blink(int num)
 	else if (num == 1)
 	{
 		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_12);
+	}
+	else if (num == 2)
+	{
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_15);
 	}
 }

@@ -108,6 +108,8 @@ STARTUP		=	./src/startup_stm32f103c8tx.s
 # Hal Libraries
 SRC			+=	$(STM32_LIBS)/Src/stm32f1xx_hal.c \
 				$(STM32_LIBS)/Src/stm32f1xx_hal_cortex.c \
+				$(STM32_LIBS)/Src/stm32f1xx_hal_adc.c \
+				$(STM32_LIBS)/Src/stm32f1xx_hal_adc_ex.c \
 				$(STM32_LIBS)/Src/stm32f1xx_hal_dma.c \
 				$(STM32_LIBS)/Src/stm32f1xx_hal_exti.c \
 				$(STM32_LIBS)/Src/stm32f1xx_hal_flash.c \

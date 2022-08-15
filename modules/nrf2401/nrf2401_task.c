@@ -11,6 +11,7 @@
 #include <protocol.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <led.h>
 
 float ctl_thro = 0;
 float ctl_pitch = 0;
@@ -26,7 +27,7 @@ void* nrf2401_pthread(void* arg)
 
 	sem_init(&sem_sig, 0);
 
-	uint16_t ctl[4] = { 0 };
+	uint16_t ctl[5] = { 0 };
 
 	uint8_t rx_buff[32] = { 0 };
 	uint8_t rx_len = 0;
@@ -67,6 +68,13 @@ void* nrf2401_pthread(void* arg)
 		if (ret == 0)
 		{
 			tk_recv = HAL_GetTick();
+
+			// for (int i = 0; i < 5; i++)
+			// {
+			// 	printf("%04d ");
+			// }
+			// printf("\n");
+			
 
 			float roll = ((float)(ctl[0] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 			float pitch = ((float)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
@@ -135,8 +143,9 @@ void nrf2401_task(void)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	if (GPIO_Pin == GPIO_PIN_10)
+	if (GPIO_Pin == GPIO_PIN_12)
 	{
+		led_on(1);
 		// rx_len = NRF24L01_Read_Reg(R_RX_PL_WID); //读取接收到的数据个数
 		// NRF24L01_Read_Buf(RD_RX_PLOAD, rx_buff, rx_len); //接收到数据
 

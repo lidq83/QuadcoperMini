@@ -13,6 +13,10 @@ extern int ctl_armed;
 
 void* led_pthread(void* arg)
 {
+	led_on(0);
+	led_off(1);
+	led_off(2);
+
 	for (uint8_t i = 0;; i++)
 	{
 		if ((led.led_val >> (i % 8)) & 0x1)
@@ -22,15 +26,6 @@ void* led_pthread(void* arg)
 		else
 		{
 			led_off(0);
-		}
-
-		if (ctl_armed)
-		{
-			led_blink(1);
-		}
-		else
-		{
-			led_on(1);
 		}
 
 		sleep_ticks(100);

@@ -143,5 +143,8 @@ int protocol_parse(uint16_t *ctl)
 	ctl[3] = buff[8];
 	ctl[3] |= (buff[9] << 8) & 0xff00;
 
+	ctl[4] = buff[10];
+	ctl[4] |= (buff[11] << 8) & 0xff00;
+
 	return 0;
 }

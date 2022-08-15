@@ -15,6 +15,7 @@
 
 extern SPI_HandleTypeDef hspi1;
 
+char* g_OKString = "RF24L01 is OK.\n";
 char* g_ErrorString = "RF24L01 is not find.\n";
 
 void spi_nrf_ce_high()
@@ -39,7 +40,7 @@ void spi_nrf_cs_low()
 
 uint8_t spi_nrf_irq_st()
 {
-	return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_10);
+	return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12);
 }
 
 uint8_t SPIx_ReadWriteByte(uint8_t value)
@@ -502,6 +503,7 @@ void NRF24L01_check(void)
 
 		if (5 == i)
 		{
+			printf(g_OKString);
 			break;
 		}
 		else

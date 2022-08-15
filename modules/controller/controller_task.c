@@ -217,6 +217,8 @@ void* controller_pthread(void* arg)
 			}
 		}
 
+		// printf("%d %d %d\n", (int)(mpu_value[0] * 1000), (int)(mpu_value[1] * 1000), (int)(mpu_value[2] * 1000));
+
 		float x = xyz_value[0];
 		float y = xyz_value[1];
 		float z = xyz_value[2];
