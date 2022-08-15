@@ -43,12 +43,12 @@ int protocol_size(void)
 int protocol_parse(uint16_t *ctl)
 {
 	int cnt = protocol_size();
-	if (cnt < 12)
+	if (cnt < 14)
 	{
 		return -1;
 	}
 
-	char buff[12] = { 0 };
+	char buff[16] = { 0 };
 	uint16_t crc = 0;
 	int ind = 0;
 	int step = 0;
@@ -125,7 +125,7 @@ int protocol_parse(uint16_t *ctl)
 
 	bs.foot = foot;
 
-	uint16_t crc_calc = calc16crc((uint8_t *) buff, 10);
+	uint16_t crc_calc = calc16crc((uint8_t *) buff, 12);
 	if (crc != crc_calc || crc == 0 || crc_calc == 0)
 	{
 		return -3;

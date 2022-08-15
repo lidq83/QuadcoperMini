@@ -17,9 +17,49 @@ float ctl_thro = 0;
 float ctl_pitch = 0;
 float ctl_roll = 0;
 float ctl_yaw = 0;
+uint8_t ctl_sw[4] = { 0 };
 
 static sem_t sem_sig = { 0 };
 static uint32_t tk_recv = 0;
+
+void ctl_switch(uint16_t* ctl)
+{
+	if (ctl[4] & 1)
+	{
+		ctl_sw[0] = 1;
+	}
+	else
+	{
+		ctl_sw[0] = 0;
+	}
+
+	if (ctl[4] & (1 << 1))
+	{
+		ctl_sw[1] = 1;
+	}
+	else
+	{
+		ctl_sw[1] = 0;
+	}
+
+	if (ctl[4] & (1 << 2))
+	{
+		ctl_sw[2] = 1;
+	}
+	else
+	{
+		ctl_sw[2] = 0;
+	}
+
+	if (ctl[4] & (1 << 3))
+	{
+		ctl_sw[3] = 1;
+	}
+	else
+	{
+		ctl_sw[3] = 0;
+	}
+}
 
 void* nrf2401_pthread(void* arg)
 {
@@ -56,11 +96,11 @@ void* nrf2401_pthread(void* arg)
 		NRF24L01_Read_Buf(RD_RX_PLOAD, rx_buff, rx_len); //接收到数据
 		if (rx_len > 0)
 		{
-			for (int i = 0; i < rx_len; i++)
-			{
-				printf("%02x ", rx_buff[i]);
-			}
-			printf("\n");
+			// for (int i = 0; i < rx_len; i++)
+			// {
+			// 	printf("%02x ", rx_buff[i]);
+			// }
+			// printf("\n");
 
 			protocol_append(rx_buff, rx_len);
 		}
@@ -73,7 +113,15 @@ void* nrf2401_pthread(void* arg)
 		int ret = protocol_parse(ctl);
 		if (ret == 0)
 		{
+			// for (int i = 0; i < 5; i++)
+			// {
+			// 	printf("%04d ", ctl[i]);
+			// }
+			// printf("\n");
+
 			tk_recv = HAL_GetTick();
+
+			ctl_switch(ctl);
 
 			float roll = ((float)(ctl[0] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 			float pitch = ((float)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;

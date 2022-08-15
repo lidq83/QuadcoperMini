@@ -9,7 +9,8 @@
 #include <led_task.h>
 
 led_s led = { 0, 0x05 };
-extern int ctl_armed;
+extern int ctl_arming;
+extern int ctl_calibrate;
 
 void* led_pthread(void* arg)
 {
@@ -28,7 +29,20 @@ void* led_pthread(void* arg)
 			led_off(0);
 		}
 
-		sleep_ticks(100);
+		if (ctl_arming)
+		{
+			led_on(1);
+		}
+		else if (ctl_calibrate == 0)
+		{
+			led_off(1);
+		}
+		else if (ctl_calibrate > 0)
+		{
+			led_blink(1);
+		}
+
+		sleep_ticks(125);
 	}
 	return NULL;
 }

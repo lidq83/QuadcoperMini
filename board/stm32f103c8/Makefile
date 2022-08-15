@@ -54,6 +54,7 @@ CFLAGS		+=	-I./inc
 DRVS		=	$(ROOTPATH)/drivers
 CFLAGS		+=	-I$(DRVS)
 CFLAGS		+=	-I$(DRVS)/led
+CFLAGS		+=	-I$(DRVS)/flash
 CFLAGS		+=	-I$(DRVS)/mpu6050
 CFLAGS		+=	-I$(DRVS)/nrf2401
 
@@ -77,6 +78,7 @@ SRC			+=	$(SRCS)/main.c
 #------------------------------------------------------------------------#
 # Drivers
 SRC			+=	$(DRVS)/led/led.c \
+				$(DRVS)/flash/flash.c \
 				$(DRVS)/mpu6050/i2cdev.c \
 				$(DRVS)/mpu6050/mpu6050.c \
 				$(DRVS)/nrf2401/nrf2401.c
