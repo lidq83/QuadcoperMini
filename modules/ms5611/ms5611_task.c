@@ -35,7 +35,7 @@ void* ms5611_pthread(void* arg)
 		v = ms5611.P * f + vp * (1.0 - f);
 		vp = v;
 
-		printf("ms5611 %6d %6d %7d \n", ms5611.P, ms5611.TEMP, (int)(v * 10));
+		// printf("ms5611 %6d %6d %7d \n", ms5611.P, ms5611.TEMP, (int)(v * 10));
 		sleep_ticks(10);
 	}
 	return NULL;

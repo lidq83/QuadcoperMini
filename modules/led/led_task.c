@@ -20,26 +20,34 @@ void* led_pthread(void* arg)
 
 	for (uint8_t i = 0;; i++)
 	{
-		if ((led.led_val >> (i % 8)) & 0x1)
+		if (ctl_arming)
 		{
-			led_on(0);
+			if ((led.led_val >> (i % 8)) & 0x1)
+			{
+				led_on(0);
+			}
+			else
+			{
+				led_off(0);
+			}
 		}
 		else
 		{
-			led_off(0);
-		}
-
-		if (ctl_arming)
-		{
-			led_on(1);
-		}
-		else if (ctl_calibrate == 0)
-		{
-			led_off(1);
-		}
-		else if (ctl_calibrate > 0)
-		{
-			led_blink(1);
+			if (ctl_calibrate == 0)
+			{
+				led_blink(0);
+			}
+			else
+			{
+				if (i % 16 < 8)
+				{
+					led_on(0);
+				}
+				else
+				{
+					led_off(0);
+				}
+			}
 		}
 
 		sleep_ticks(125);

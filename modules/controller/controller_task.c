@@ -38,9 +38,9 @@ float ctl_param_yaw_angle_p = 13.0;
 
 // [角速度参数
 // 俯仰 - 滚转
-const float ctl_param_pitch_roll_rate_p = 0.013;
-const float ctl_param_pitch_roll_rate_i = 0.0009;
-const float ctl_param_pitch_roll_rate_d = 0.023;
+const float ctl_param_pitch_roll_rate_p = 0.011;
+const float ctl_param_pitch_roll_rate_i = 0.0007;
+const float ctl_param_pitch_roll_rate_d = 0.02;
 // 航向
 const float ctl_param_yaw_rate_p = 0.02;
 const float ctl_param_yaw_rate_i = 0.0006;
@@ -175,6 +175,16 @@ void ctl_offset(float x, float y, float z, float gx, float gy, float gz)
 	offset_gz_pre = offset_gz;
 }
 
+void ctl_offset_z(float z, float gz)
+{
+	//角度
+	offset_z = z * offset_z_filter + offset_z_pre * (1.0 - offset_z_filter);
+	offset_z_pre = offset_z;
+	//角速度
+	offset_gz = gz * offset_gz_filter + offset_gz_pre * (1.0 - offset_gz_filter);
+	offset_gz_pre = offset_gz;
+}
+
 void ctl_offset_save(void)
 {
 	uint32_t value[8] = { 0 };
@@ -215,7 +225,7 @@ void ctl_output(void)
 	{
 		ctl_pwm[i] = ctl_motor[i] * (PWM_MAX - PWM_MIN) + PWM_MIN;
 	}
-	
+
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, ctl_pwm[0]);
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, ctl_pwm[1]);
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, ctl_pwm[2]);
@@ -276,8 +286,11 @@ void* controller_pthread(void* arg)
 	{
 		if (ctl_sw[2] == 1)
 		{
-			ctl_arming = 1;
-			ctl_calibrate = 0;
+			if (ctl_arming == 0 && ctl_thro < 0.15)
+			{
+				ctl_arming = 1;
+				ctl_calibrate = 0;
+			}
 		}
 		else
 		{
@@ -385,6 +398,10 @@ void* controller_pthread(void* arg)
 
 				ctl_offset_save();
 			}
+			if (ctl_calibrate == 0)
+			{
+				ctl_offset_z(-z, -gz);
+			}
 
 			ctl_lock_zero();
 			ctl_mixer(0, 0, 0, 0, ctl_motor);
@@ -393,7 +410,7 @@ void* controller_pthread(void* arg)
 		ctl_output();
 
 		tk++;
-		sleep_ticks(7);
+		sleep_ticks(10);
 	}
 	return NULL;
 }
