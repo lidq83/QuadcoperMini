@@ -2,10 +2,12 @@
 
 #include "controller_task.h"
 #include "led_task.h"
+#include "ms5611_task.h"
 #include "nrf2401_task.h"
 
 #include <core.h>
 #include <sche.h>
+
 
 ADC_HandleTypeDef hadc1;
 I2C_HandleTypeDef hi2c1;
@@ -42,6 +44,7 @@ int main(void)
 	led_task();
 	controller_task();
 	nrf2401_task();
+	ms5611_task();
 
 	_kernel_startup = 1;
 
@@ -306,7 +309,7 @@ void MX_GPIO_Init(void)
 
 	/*Configure GPIO pin : PB12 */
 	GPIO_InitStruct.Pin = GPIO_PIN_12;
-	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING; //GPIO_MODE_IT_RISING;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING; // GPIO_MODE_IT_RISING;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 

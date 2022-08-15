@@ -113,12 +113,6 @@ void* nrf2401_pthread(void* arg)
 		int ret = protocol_parse(ctl);
 		if (ret == 0)
 		{
-			// for (int i = 0; i < 5; i++)
-			// {
-			// 	printf("%04d ", ctl[i]);
-			// }
-			// printf("\n");
-
 			tk_recv = HAL_GetTick();
 
 			ctl_switch(ctl);
@@ -192,17 +186,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if (GPIO_Pin == GPIO_PIN_12)
 	{
-		// rx_len = NRF24L01_Read_Reg(R_RX_PL_WID); //读取接收到的数据个数
-		// NRF24L01_Read_Buf(RD_RX_PLOAD, rx_buff, rx_len); //接收到数据
-
-		// protocol_append(rx_buff, rx_len);
-		// rx_len = 0;
-
-		// NRF24L01_Write_Reg(FLUSH_RX, 0xff); //清除RX FIFO
-		// NRF24L01_Clear_IRQ_Flag(IRQ_ALL);
-
-		// RF24L01_Set_Mode(MODE_RX);
-
 		sem_post(&sem_sig);
 	}
 }
