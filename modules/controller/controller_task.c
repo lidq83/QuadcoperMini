@@ -10,7 +10,7 @@
 #include <mpu6050.h>
 #include <stdio.h>
 
-#define __ALT_MODE_ (0)
+#define __ALT_MODE_ (1)
 
 #define MAGIC_NUM (0x1F28E9C4)
 
@@ -89,9 +89,9 @@ float offset_gz_filter = 0.03;
 //[高度控制
 extern double alt_vel;
 
-const float ctl_param_alt_vel_p = 0.15;
-const float ctl_param_alt_vel_i = 0.005;
-const float ctl_param_alt_vel_d = 0.5;
+const float ctl_param_alt_vel_p = 0.7;
+const float ctl_param_alt_vel_i = 0.003;
+const float ctl_param_alt_vel_d = 1.25;
 
 float ctl_integral_alt_vel = 0;
 float devi_alt_vel_pre = 0;
@@ -257,7 +257,7 @@ void alt_vel_calc(double v1, double az, double dt)
 {
 	az_vel += az * dt;
 
-	float vel_filter = 0.1f;
+	float vel_filter = 0.07f;
 	double K = 1.0;
 	double v2 = az_vel;
 	double v = (v1 - v2) * K + v2;
@@ -411,10 +411,11 @@ void* controller_pthread(void* arg)
 
 #if __ALT_MODE_
 			// [高度控制
-			float exp_vel = (ctl_thro - 0.5) * 1.0;
+			float exp_vel = (ctl_thro - 0.5) * 0.1;
 			float devi_alt_vel = exp_vel - alt_vel_q;
-			// printf("%+6d %+6d %+6d\n", (int)(exp_vel * 1000.0), (int)(alt_vel_q * 1000.0), (int)(devi_alt_vel * 1000.0));
-			float ctl_alt = ctl_pid(devi_alt_vel, devi_alt_vel_pre, ctl_param_alt_vel_p, ctl_param_alt_vel_i, ctl_param_alt_vel_d, &ctl_integral_alt_vel, 0.2f);
+			float ctl_alt = ctl_pid(devi_alt_vel, devi_alt_vel_pre, ctl_param_alt_vel_p, ctl_param_alt_vel_i, ctl_param_alt_vel_d, &ctl_integral_alt_vel, 0.85);
+			devi_alt_vel_pre = devi_alt_vel;
+			// printf("%+6d %+6d %+6d ", (int)(exp_vel * 1000.0), (int)(alt_vel_q * 1000.0), (int)(devi_alt_vel * 1000.0));
 			// printf("%+6d\n", (int)(ctl_alt * 1000.0));
 			// 高度控制]
 #endif
@@ -430,7 +431,7 @@ void* controller_pthread(void* arg)
 			{
 
 #if __ALT_MODE_
-				ctl_mixer(0.50 + ctl_alt, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
+				ctl_mixer(0.4+ctl_alt, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
 #else
 				ctl_mixer(ctl_thro, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
 #endif
