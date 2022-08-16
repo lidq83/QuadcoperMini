@@ -11,7 +11,7 @@ void MS5611_Rest(I2C_HandleTypeDef* I2Cx)
 {
 	uint8_t RESET = (uint8_t)MS5611_CMD_REST;
 	HAL_I2C_Master_Transmit(I2Cx, MS5611_SLAVE_ADDR, &RESET, 1, 1000);
-	HAL_Delay(4);
+	sleep_ticks(4);
 }
 /*
  * Function for reading PROM memories of the sensor
@@ -111,7 +111,7 @@ uint8_t MS5611_read_temp(I2C_HandleTypeDef* I2Cx, MS5611_t* datastruct, uint8_t 
 
 	while (HAL_I2C_Master_Transmit(Handle, address, &cmd, 1, 100) != HAL_OK)
 		; // asking adc to store data
-	HAL_Delay(conv_T); // convertion time
+	sleep_ticks(conv_T); // convertion time
 	while (HAL_I2C_Master_Transmit(Handle, address, &reg, 1, 100) != HAL_OK)
 		; // asking for the data
 	while (HAL_I2C_Master_Receive(Handle, address, data, 3, 100) != HAL_OK)
@@ -162,7 +162,7 @@ uint8_t MS5611_read_press(I2C_HandleTypeDef* I2Cx, MS5611_t* datastruct, uint8_t
 
 	while (HAL_I2C_Master_Transmit(Handle, address, &cmd, 1, 100) != HAL_OK)
 		; // asking adc to store data
-	HAL_Delay(conv_T); // convertion time
+	sleep_ticks(conv_T); // convertion time
 	while (HAL_I2C_Master_Transmit(Handle, address, &reg, 1, 100) != HAL_OK)
 		; // asking for the data
 	while (HAL_I2C_Master_Receive(Handle, address, data, 3, 100) != HAL_OK)
@@ -245,7 +245,7 @@ uint8_t NB_MS5611_request_temp(I2C_HandleTypeDef* I2Cx, MS5611_t* datastruct, ui
 
 	while (HAL_I2C_Master_Transmit(Handle, address, &cmd, 1, 100) != HAL_OK)
 	{ // asking adc to store data
-		HAL_Delay(1);
+		sleep_ticks(1);
 		timeout++;
 		if (timeout >= 10)
 		{
@@ -267,7 +267,7 @@ uint8_t NB_MS5611_pull_temp(I2C_HandleTypeDef* I2Cx, MS5611_t* datastruct)
 
 	while (HAL_I2C_Master_Transmit(Handle, address, &reg, 1, 100) != HAL_OK)
 	{ // asking for the data
-		HAL_Delay(1);
+		sleep_ticks(1);
 		timeout++;
 		if (timeout >= 10)
 		{
@@ -277,7 +277,7 @@ uint8_t NB_MS5611_pull_temp(I2C_HandleTypeDef* I2Cx, MS5611_t* datastruct)
 	}
 	while (HAL_I2C_Master_Receive(Handle, address, data, 3, 100) != HAL_OK)
 	{ // receive the data
-		HAL_Delay(1);
+		sleep_ticks(1);
 		timeout++;
 		if (timeout >= 10)
 		{
@@ -320,7 +320,7 @@ uint8_t NB_MS5611_request_press(I2C_HandleTypeDef* I2Cx, MS5611_t* datastruct, u
 
 	while (HAL_I2C_Master_Transmit(Handle, address, &cmd, 1, 100) != HAL_OK)
 	{ // asking adc to store data
-		HAL_Delay(1);
+		sleep_ticks(1);
 		timeout++;
 		if (timeout >= 10)
 		{
@@ -342,7 +342,7 @@ uint8_t NB_MS5611_pull_press(I2C_HandleTypeDef* I2Cx, MS5611_t* datastruct)
 
 	while (HAL_I2C_Master_Transmit(Handle, address, &reg, 1, 100) != HAL_OK)
 	{ // asking for the data
-		HAL_Delay(1);
+		sleep_ticks(1);
 		timeout++;
 		if (timeout >= 10)
 		{
@@ -352,7 +352,7 @@ uint8_t NB_MS5611_pull_press(I2C_HandleTypeDef* I2Cx, MS5611_t* datastruct)
 	}
 	while (HAL_I2C_Master_Receive(Handle, address, data, 3, 100) != HAL_OK)
 	{ // receive the data
-		HAL_Delay(1);
+		sleep_ticks(1);
 		timeout++;
 		if (timeout >= 10)
 		{

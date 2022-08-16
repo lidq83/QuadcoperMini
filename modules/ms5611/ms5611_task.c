@@ -10,6 +10,8 @@
 
 extern I2C_HandleTypeDef hi2c2;
 
+double alt_press = 0;
+
 void* ms5611_pthread(void* arg)
 {
 	MS5611_t ms5611 = { 0 };
@@ -17,25 +19,41 @@ void* ms5611_pthread(void* arg)
 
 	double v = 0;
 	double vp = 0;
-	double f = 0.03;
+	double filter = 0.03;
+	double first_total = 0;
+	double first_val = 0;
+	int first_cnt = 0;
+	double alt_p = -0.0001;
+
 	while (1)
 	{
-		// NB_MS5611_request_press(&hi2c2, &ms5611, MS5611_CMD_CONVERT_D1_4096);
-		// NB_MS5611_pull_press(&hi2c2, &ms5611);
-
-		// NB_MS5611_request_temp(&hi2c2, &ms5611, MS5611_CMD_CONVERT_D2_4096);
-		// NB_MS5611_pull_temp(&hi2c2, &ms5611);
-
-
-		MS5611_read_press(&hi2c2, &ms5611, MS5611_CMD_CONVERT_D1_2048);
-		MS5611_read_temp(&hi2c2, &ms5611, MS5611_CMD_CONVERT_D2_2048);
+		MS5611_read_press(&hi2c2, &ms5611, MS5611_CMD_CONVERT_D1_4096);
+		MS5611_read_temp(&hi2c2, &ms5611, MS5611_CMD_CONVERT_D2_4096);
 
 		MS5611_calculate(&ms5611);
 
-		v = ms5611.P * f + vp * (1.0 - f);
-		vp = v;
 
-		// printf("ms5611 %6d %6d %7d \n", ms5611.P, ms5611.TEMP, (int)(v * 10));
+		double P = ms5611.P;
+
+		if (first_cnt < 100)
+		{
+			first_total += P;
+			first_cnt++;
+		}
+		else if (first_cnt == 100)
+		{
+			first_val = first_total / first_cnt;
+			first_cnt++;
+		}
+		else
+		{
+			double press = P - first_val;
+
+			v = press * filter + vp * (1.0 - filter);
+			vp = v;
+			alt_press = v * alt_p;
+		}
+
 		sleep_ticks(10);
 	}
 	return NULL;

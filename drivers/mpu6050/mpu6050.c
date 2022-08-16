@@ -141,9 +141,9 @@ int mpu6050_value(float *x, float *y, float *z, float *gx, float *gy, float *gz,
 		//		*az = (float) aaReal.z / 163.84;
 
 		mpu6050_dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
-		*ax = (float) aaWorld.x / 163.84;
-		*ay = (float) aaWorld.y / 163.84;
-		*az = (float) aaWorld.z / 163.84;
+		*ax = (float) aaWorld.x / 371.491;
+		*ay = (float) aaWorld.y / 371.491;
+		*az = (float) aaWorld.z / 371.491 - 9.80;
 
 		mpu6050_getRotation(&ggx, &ggy, &ggz);
 		float _gx = (float) (ggx) / 131.0;
