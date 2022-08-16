@@ -21,7 +21,6 @@ extern float ctl_pitch;
 extern float ctl_roll;
 extern float ctl_yaw;
 extern uint8_t ctl_sw[4];
-extern double alt_press;
 
 float ctl_angle = 7.0f * M_PI / 180.0f;
 float ctl_angle_p = 1.0f;
@@ -88,19 +87,19 @@ float offset_gz_filter = 0.03;
 // 零偏]
 
 //[高度控制
-float alt_expect_rate = 0.005; // 1毫米/10ms
-float alt_expect_total = 0;
+extern double alt_vel;
 
-float offset_alt = 0;
-float offset_alt_pre = 0;
-float offset_alt_filter = 0.03;
+const float ctl_param_alt_vel_p = 0.15;
+const float ctl_param_alt_vel_i = 0.005;
+const float ctl_param_alt_vel_d = 0.5;
 
-const float ctl_param_alt_p = 0.3;
-const float ctl_param_alt_i = 0.0005;
-const float ctl_param_alt_d = 0.5;
+float ctl_integral_alt_vel = 0;
+float devi_alt_vel_pre = 0;
 
-float ctl_integral_alt = 0;
-float devi_alt_pre = 0;
+float alt_vel_q = 0;
+float alt_vel_q_pre = 0;
+
+double az_vel = 0;
 //高度控制]
 
 // 电机控制量
@@ -116,9 +115,6 @@ float xyz_value_filter[9] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 }; //�
 
 int ctl_arming = 0;
 int ctl_calibrate = 0;
-
-float alt_q = 0;
-float alt_q_pre = 0;
 
 void ctl_value_limit(float* value, float max, float min)
 {
@@ -176,9 +172,9 @@ void ctl_lock_zero(void)
 
 	yaw_expect_total = 0;
 
-	alt_expect_total = 0;
-	devi_alt_pre = 0;
-	ctl_integral_alt = 0;
+	az_vel = 0;
+	devi_alt_vel_pre = 0;
+	ctl_integral_alt_vel = 0;
 }
 
 void ctl_offset(float x, float y, float z, float gx, float gy, float gz)
@@ -198,13 +194,6 @@ void ctl_offset(float x, float y, float z, float gx, float gy, float gz)
 	offset_gx_pre = offset_gx;
 	offset_gy_pre = offset_gy;
 	offset_gz_pre = offset_gz;
-}
-
-void ctl_offset_alt(float alt)
-{
-	//高度
-	offset_alt = alt * offset_alt_filter + offset_alt_pre * (1.0 - offset_alt_filter);
-	offset_alt_pre = offset_alt;
 }
 
 void ctl_offset_z(float z, float gz)
@@ -264,16 +253,19 @@ void ctl_output(void)
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, ctl_pwm[3]);
 }
 
-void alt_calc(double h1, double az, double dt)
+void alt_vel_calc(double v1, double az, double dt)
 {
-	float alt_q_filter = 0.3f;
-	double K = 0.25;
-	double h2 = az * dt * dt;
-	double alt = (h1 - h2) * K + h2;
-	alt *= 1000.0f;
+	az_vel += az * dt;
 
-	alt_q = alt * alt_q_filter + alt_q_pre * (1.0 - alt_q_filter);
-	alt_q_pre = alt_q;
+	float vel_filter = 0.1f;
+	double K = 1.0;
+	double v2 = az_vel;
+	double v = (v1 - v2) * K + v2;
+
+	alt_vel_q = v * vel_filter + alt_vel_q_pre * (1.0 - vel_filter);
+	alt_vel_q_pre = alt_vel_q;
+
+	// printf("%+6d\n", (int)(alt_vel_q * 1000.0));
 }
 
 void* controller_pthread(void* arg)
@@ -330,7 +322,7 @@ void* controller_pthread(void* arg)
 	{
 		if (ctl_sw[2] == 1)
 		{
-			if (ctl_arming == 0 && ctl_thro < 0.15)
+			if (ctl_arming == 0 && ctl_thro < 0.1)
 			{
 				ctl_arming = 1;
 				ctl_calibrate = 0;
@@ -349,7 +341,6 @@ void* controller_pthread(void* arg)
 		{
 			ctl_angle_p = 1.0f;
 		}
-
 
 		//读取姿态信息
 		if (mpu6050_value(&mpu_value[0], &mpu_value[1], &mpu_value[2], &mpu_value[3], &mpu_value[4], &mpu_value[5], &mpu_value[6], &mpu_value[7], &mpu_value[8]) == 0)
@@ -378,18 +369,12 @@ void* controller_pthread(void* arg)
 		float t_gz = offset_gz + gz;
 
 #if __ALT_MODE_
-		alt_calc(alt_press, mpu_value[8], 0.01);
+		alt_vel_calc(alt_vel, mpu_value[8], 0.01);
 #endif
 
 		//已解锁
 		if (ctl_arming)
 		{
-
-#if __ALT_MODE_
-			//高度期望
-			alt_expect_total += (ctl_thro - 0.5) * alt_expect_rate;
-#endif
-
 			//角速度期望转为航向角速期望
 			yaw_expect_total += ctl_yaw * yaw_expect_rate;
 
@@ -426,25 +411,26 @@ void* controller_pthread(void* arg)
 
 #if __ALT_MODE_
 			// [高度控制
-			float alt = (alt_q + offset_alt);
-			float devi_alt = alt_expect_total - alt;
-			float ctl_alt = ctl_pid(devi_alt, devi_alt_pre, ctl_param_alt_p, ctl_param_alt_i, ctl_param_alt_d, &ctl_integral_alt, 0.5f);
+			float exp_vel = (ctl_thro - 0.5) * 1.0;
+			float devi_alt_vel = exp_vel - alt_vel_q;
+			// printf("%+6d %+6d %+6d\n", (int)(exp_vel * 1000.0), (int)(alt_vel_q * 1000.0), (int)(devi_alt_vel * 1000.0));
+			float ctl_alt = ctl_pid(devi_alt_vel, devi_alt_vel_pre, ctl_param_alt_vel_p, ctl_param_alt_vel_i, ctl_param_alt_vel_d, &ctl_integral_alt_vel, 0.2f);
+			// printf("%+6d\n", (int)(ctl_alt * 1000.0));
 			// 高度控制]
 #endif
 
 			//混控
-			if (ctl_thro < 0.15)
+			if (ctl_thro < 0.1)
 			{
 				ctl_lock_zero();
 				ctl_offset_z(-z, -gz);
-				ctl_offset_alt(-alt_q);
 				ctl_mixer(0, 0, 0, 0, ctl_motor);
 			}
 			else
 			{
 
 #if __ALT_MODE_
-				ctl_mixer(0.35 + ctl_alt, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
+				ctl_mixer(0.50 + ctl_alt, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
 #else
 				ctl_mixer(ctl_thro, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
 #endif
@@ -475,7 +461,6 @@ void* controller_pthread(void* arg)
 			if (ctl_calibrate == 0)
 			{
 				ctl_offset_z(-z, -gz);
-				ctl_offset_alt(-alt_q);
 			}
 
 			ctl_lock_zero();
