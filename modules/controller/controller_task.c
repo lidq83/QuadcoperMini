@@ -10,6 +10,8 @@
 #include <mpu6050.h>
 #include <stdio.h>
 
+#define __ALT_MODE_ (0)
+
 #define MAGIC_NUM (0x1F28E9C4)
 
 extern TIM_HandleTypeDef htim2;
@@ -21,9 +23,8 @@ extern float ctl_yaw;
 extern uint8_t ctl_sw[4];
 extern double alt_press;
 
-float ctl_angle = 7.5f * M_PI / 180.0f;
+float ctl_angle = 7.0f * M_PI / 180.0f;
 float ctl_angle_p = 1.0f;
-
 float sqrt_2_2 = 0.707106781; // sqrt(2)/2
 
 //航向期望角（总和）
@@ -44,7 +45,7 @@ const float ctl_param_pitch_roll_rate_i = 0.0007;
 const float ctl_param_pitch_roll_rate_d = 0.02;
 // 航向
 const float ctl_param_yaw_rate_p = 0.02;
-const float ctl_param_yaw_rate_i = 0.0006;
+const float ctl_param_yaw_rate_i = 0.0012;
 const float ctl_param_yaw_rate_d = 0.04;
 // 角速度参数]
 
@@ -115,7 +116,6 @@ float xyz_value_filter[9] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 }; //�
 
 int ctl_arming = 0;
 int ctl_calibrate = 0;
-int ctl_alt_mode = 0;
 
 float alt_q = 0;
 float alt_q_pre = 0;
@@ -274,8 +274,6 @@ void alt_calc(double h1, double az, double dt)
 
 	alt_q = alt * alt_q_filter + alt_q_pre * (1.0 - alt_q_filter);
 	alt_q_pre = alt_q;
-
-	// printf("%6d %6d %6d %6d %6d \n", (int)(alt_q * 1000), (int)(h1 * 1000000), (int)(h2 * 1000000), (int)(az * 1000), (int)(alt * 1000000));
 }
 
 void* controller_pthread(void* arg)
@@ -345,12 +343,13 @@ void* controller_pthread(void* arg)
 
 		if (ctl_sw[3] == 1)
 		{
-			ctl_alt_mode = 1;
+			ctl_angle_p = 3.0f;
 		}
 		else
 		{
-			ctl_alt_mode = 0;
+			ctl_angle_p = 1.0f;
 		}
+
 
 		//读取姿态信息
 		if (mpu6050_value(&mpu_value[0], &mpu_value[1], &mpu_value[2], &mpu_value[3], &mpu_value[4], &mpu_value[5], &mpu_value[6], &mpu_value[7], &mpu_value[8]) == 0)
@@ -378,21 +377,26 @@ void* controller_pthread(void* arg)
 		float t_gy = offset_gy + gy;
 		float t_gz = offset_gz + gz;
 
+#if __ALT_MODE_
 		alt_calc(alt_press, mpu_value[8], 0.01);
+#endif
 
 		//已解锁
 		if (ctl_arming)
 		{
+
+#if __ALT_MODE_
 			//高度期望
 			alt_expect_total += (ctl_thro - 0.5) * alt_expect_rate;
+#endif
 
 			//角速度期望转为航向角速期望
 			yaw_expect_total += ctl_yaw * yaw_expect_rate;
 
 			// [外环PID控制
 			//根据角度期望计算角度误差
-			float devi_pitch_angle = (-ctl_pitch) * ctl_angle - t_x;
-			float devi_roll_angle = (-ctl_roll) * ctl_angle - t_y;
+			float devi_pitch_angle = (-ctl_pitch) * (ctl_angle * ctl_angle_p) - t_x;
+			float devi_roll_angle = (-ctl_roll) * (ctl_angle * ctl_angle_p) - t_y;
 			float devi_yaw_angle = yaw_expect_total - t_z;
 			// PID得到角速度期望
 			float ctl_pitch_angle = ctl_pid(devi_pitch_angle, devi_pitch_angle_pre, ctl_param_pitch_roll_angle_p, 0, 0, NULL, 0);
@@ -420,13 +424,13 @@ void* controller_pthread(void* arg)
 			devi_yaw_rate_pre = devi_yaw_rate;
 			// 更新误差项]
 
+#if __ALT_MODE_
 			// [高度控制
 			float alt = (alt_q + offset_alt);
 			float devi_alt = alt_expect_total - alt;
 			float ctl_alt = ctl_pid(devi_alt, devi_alt_pre, ctl_param_alt_p, ctl_param_alt_i, ctl_param_alt_d, &ctl_integral_alt, 0.5f);
-
-			// printf("%5d %5d %5d %5d\n", (int)(alt_expect_total * 1000), (int)(alt * 1000), (int)((alt_expect_total - alt) * 1000), (int)(ctl_alt * 1000));
 			// 高度控制]
+#endif
 
 			//混控
 			if (ctl_thro < 0.15)
@@ -438,14 +442,12 @@ void* controller_pthread(void* arg)
 			}
 			else
 			{
-				if (ctl_alt_mode)
-				{
-					ctl_mixer(0.35 + ctl_alt, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
-				}
-				else 
-				{
-					ctl_mixer(ctl_thro, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
-				}
+
+#if __ALT_MODE_
+				ctl_mixer(0.35 + ctl_alt, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
+#else
+				ctl_mixer(ctl_thro, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
+#endif
 			}
 		}
 		//未解锁
