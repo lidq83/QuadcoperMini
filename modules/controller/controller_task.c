@@ -299,7 +299,7 @@ void* controller_pthread(void* arg)
 
 		if (ctl_sw[3] == 1)
 		{
-			ctl_angle_p = 2.0f;
+			ctl_angle_p = 3.0f;
 		}
 		else
 		{
@@ -374,7 +374,15 @@ void* controller_pthread(void* arg)
 			// 更新误差项]
 
 			//混控
-			ctl_mixer(ctl_thro, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
+			if (ctl_thro < 0.15)
+			{
+				ctl_lock_zero();
+				ctl_mixer(0, 0, 0, 0, ctl_motor);
+			}
+			else
+			{
+				ctl_mixer(ctl_thro, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
+			}
 		}
 		//未解锁
 		else
