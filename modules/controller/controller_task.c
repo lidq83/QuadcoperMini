@@ -10,7 +10,7 @@
 #include <mpu6050.h>
 #include <stdio.h>
 
-#define __ALT_MODE_ (1)
+#define __ALT_MODE_ (0)
 
 #define MAGIC_NUM (0x1F28E9C4)
 
