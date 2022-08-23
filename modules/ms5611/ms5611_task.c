@@ -10,7 +10,7 @@
 
 extern I2C_HandleTypeDef hi2c2;
 
-double alt_vel = 0;
+double alt_press = 0;
 
 void* ms5611_pthread(void* arg)
 {
@@ -32,28 +32,10 @@ void* ms5611_pthread(void* arg)
 
 		MS5611_calculate(&ms5611);
 
+		alt_press = -ms5611.P * 0.05;
+		// printf("%8d %8d %8d\n", (int)ms5611.P, (int)(alt_press * 1000.0));
 
-
-		if (first == 1)
-		{
-			P_pre = ms5611.P;
-		}
-		P = ms5611.P * P_filter + P_pre * (1.0 - P_filter);
-		double v = (P - P_pre) * 0.75; //气压差转换为速度系数
-		P_pre = P;
-
-		if (first == 1)
-		{
-			vel_pre = v;
-			first = 0;
-		}
-		vel = v * vel_filter + vel_pre * (1.0 - vel_filter);
-		vel_pre = vel;
-
-		alt_vel = -vel;
-		// printf("%8d %8d %8d\n", (int)P, (int)(v * 1000.0), (int)(vel * 1000.0));
-
-		sleep_ticks(10);
+		sleep_ticks(25);
 	}
 	return NULL;
 }

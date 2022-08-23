@@ -10,7 +10,7 @@
 #include <mpu6050.h>
 #include <stdio.h>
 
-#define __ALT_MODE_ (0)
+#define __ALT_MODE_ (1)
 
 #define MAGIC_NUM (0x1F28E9C4)
 
@@ -87,19 +87,24 @@ float offset_gz_filter = 0.03;
 // 零偏]
 
 //[高度控制
-extern double alt_vel;
+extern double alt_press;
 
-const float ctl_param_alt_vel_p = 0.7;
-const float ctl_param_alt_vel_i = 0.003;
-const float ctl_param_alt_vel_d = 1.25;
+const float ctl_param_alt_p = 0.3;
+const float ctl_param_alt_i = 0.01;
+const float ctl_param_alt_d = 2.7;
 
-float ctl_integral_alt_vel = 0;
-float devi_alt_vel_pre = 0;
+float ctl_integral_alt = 0;
+float devi_alt_pre = 0;
 
-float alt_vel_q = 0;
-float alt_vel_q_pre = 0;
+double alt_q = 0;
+double vel_mpu = 0;
+double alt_mpu = 0;
 
-double az_vel = 0;
+double offset_alt_press = 0;
+
+//高度期望（总和）
+float alt_expect_rate = 0.25; // 0.1CM/10ms = 1CM/S
+float alt_expect_total = 0;
 //高度控制]
 
 // 电机控制量
@@ -172,9 +177,14 @@ void ctl_lock_zero(void)
 
 	yaw_expect_total = 0;
 
-	az_vel = 0;
-	devi_alt_vel_pre = 0;
-	ctl_integral_alt_vel = 0;
+	alt_expect_total = 0;
+
+	alt_q = 0;
+	vel_mpu = 0;
+	alt_mpu = 0;
+
+	devi_alt_pre = 0;
+	ctl_integral_alt = 0;
 }
 
 void ctl_offset(float x, float y, float z, float gx, float gy, float gz)
@@ -204,6 +214,11 @@ void ctl_offset_z(float z, float gz)
 	//角速度
 	offset_gz = gz * offset_gz_filter + offset_gz_pre * (1.0 - offset_gz_filter);
 	offset_gz_pre = offset_gz;
+}
+
+void ctl_offset_alt_press(void)
+{
+	offset_alt_press = -alt_press;
 }
 
 void ctl_offset_save(void)
@@ -253,19 +268,24 @@ void ctl_output(void)
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, ctl_pwm[3]);
 }
 
-void alt_vel_calc(double v1, double az, double dt)
+double alt1_pre = 0;
+
+void alt_calc(double alt1, double az, double dt)
 {
-	az_vel += az * dt;
+	double alt1_v = alt1 * 0.1 + alt1_pre * 0.9;
+	alt1_pre = alt1_v;
 
-	float vel_filter = 0.07f;
-	double K = 1.0;
-	double v2 = az_vel;
-	double v = (v1 - v2) * K + v2;
+	//速度变化量
+	vel_mpu = az * dt;
+	//位移变化量
+	alt_mpu += vel_mpu * dt;
 
-	alt_vel_q = v * vel_filter + alt_vel_q_pre * (1.0 - vel_filter);
-	alt_vel_q_pre = alt_vel_q;
+	double K = 0.75;
+	//互补滤波
+	// double alt_q = (alt1_v - alt2) * K + alt2;
+	alt_q = alt1_v * (1.0 - K) + alt_mpu * K;
 
-	// printf("%+6d\n", (int)(alt_vel_q * 1000.0));
+	// printf("%+6d\n", (int)(alt_q * 1000.0));
 }
 
 void* controller_pthread(void* arg)
@@ -368,10 +388,6 @@ void* controller_pthread(void* arg)
 		float t_gy = offset_gy + gy;
 		float t_gz = offset_gz + gz;
 
-#if __ALT_MODE_
-		alt_vel_calc(alt_vel, mpu_value[8], 0.01);
-#endif
-
 		//已解锁
 		if (ctl_arming)
 		{
@@ -411,11 +427,16 @@ void* controller_pthread(void* arg)
 
 #if __ALT_MODE_
 			// [高度控制
-			float exp_vel = (ctl_thro - 0.5) * 0.1;
-			float devi_alt_vel = exp_vel - alt_vel_q;
-			float ctl_alt = ctl_pid(devi_alt_vel, devi_alt_vel_pre, ctl_param_alt_vel_p, ctl_param_alt_vel_i, ctl_param_alt_vel_d, &ctl_integral_alt_vel, 0.85);
-			devi_alt_vel_pre = devi_alt_vel;
-			// printf("%+6d %+6d %+6d ", (int)(exp_vel * 1000.0), (int)(alt_vel_q * 1000.0), (int)(devi_alt_vel * 1000.0));
+			alt_calc(alt_press + offset_alt_press, mpu_value[8], 0.01);
+
+			float exp = (ctl_thro - 0.5) * 0.1;
+			alt_expect_total += exp * alt_expect_rate;
+
+			float devi_alt = alt_expect_total - alt_q;
+			float ctl_alt = ctl_pid(devi_alt, devi_alt_pre, ctl_param_alt_p, ctl_param_alt_i, ctl_param_alt_d, &ctl_integral_alt, 0.85);
+			devi_alt_pre = devi_alt;
+
+			// printf("%+6d %+6d %+6d ", (int)(exp * 1000.0), (int)(alt_q * 1000.0), (int)(devi_alt * 1000.0));
 			// printf("%+6d\n", (int)(ctl_alt * 1000.0));
 			// 高度控制]
 #endif
@@ -425,13 +446,14 @@ void* controller_pthread(void* arg)
 			{
 				ctl_lock_zero();
 				ctl_offset_z(-z, -gz);
+				ctl_offset_alt_press();
 				ctl_mixer(0, 0, 0, 0, ctl_motor);
 			}
 			else
 			{
 
 #if __ALT_MODE_
-				ctl_mixer(0.4+ctl_alt, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
+				ctl_mixer(0.4 + ctl_alt, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
 #else
 				ctl_mixer(ctl_thro, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
 #endif
@@ -463,7 +485,7 @@ void* controller_pthread(void* arg)
 			{
 				ctl_offset_z(-z, -gz);
 			}
-
+			ctl_offset_alt_press();
 			ctl_lock_zero();
 			ctl_mixer(0, 0, 0, 0, ctl_motor);
 		}

@@ -1,4 +1,5 @@
 #include <ms5611.h>
+#include <sche.h>
 
 /*
  * driver ms5611 build for I2C communication
