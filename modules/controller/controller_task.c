@@ -10,7 +10,7 @@
 #include <mpu6050.h>
 #include <stdio.h>
 
-#define __ALT_MODE_ (1)
+#define __ALT_MODE_ (0)
 
 #define MAGIC_NUM (0x1F28E9C4)
 
@@ -22,7 +22,7 @@ extern float ctl_roll;
 extern float ctl_yaw;
 extern uint8_t ctl_sw[4];
 
-float ctl_angle = 7.0f * M_PI / 180.0f;
+float ctl_angle = 10.0f * M_PI / 180.0f;
 float ctl_angle_p = 1.0f;
 float sqrt_2_2 = 0.707106781; // sqrt(2)/2
 
@@ -40,12 +40,12 @@ float ctl_param_yaw_angle_p = 13.0;
 // [角速度参数
 // 俯仰 - 滚转
 const float ctl_param_pitch_roll_rate_p = 0.011;
-const float ctl_param_pitch_roll_rate_i = 0.0007;
-const float ctl_param_pitch_roll_rate_d = 0.02;
+const float ctl_param_pitch_roll_rate_i = 0.0006;
+const float ctl_param_pitch_roll_rate_d = 0.018;
 // 航向
 const float ctl_param_yaw_rate_p = 0.02;
 const float ctl_param_yaw_rate_i = 0.0012;
-const float ctl_param_yaw_rate_d = 0.04;
+const float ctl_param_yaw_rate_d = 0.037;
 // 角速度参数]
 
 // [积分项
@@ -383,7 +383,7 @@ void* controller_pthread(void* arg)
 
 		if (ctl_sw[3] == 1)
 		{
-			ctl_angle_p = 3.0f;
+			ctl_angle_p = 2.0f;
 		}
 		else
 		{
