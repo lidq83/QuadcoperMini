@@ -141,9 +141,9 @@ int mpu6050_value(float *x, float *y, float *z, float *gx, float *gy, float *gz,
 		//		*az = (float) aaReal.z / 163.84;
 
 		mpu6050_dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
-		*ax = (float) aaWorld.x / 371.491;
-		*ay = (float) aaWorld.y / 371.491;
-		*az = (float) aaWorld.z / 371.491 - 9.80;
+		*ax = (float) aaWorld.x / 7848.0 * 9.8;
+		*ay = (float) aaWorld.y / 7848.0 * 9.8;
+		*az = (float) aaWorld.z / 7848.0 * 9.8;
 
 		mpu6050_getRotation(&ggx, &ggy, &ggz);
 		float _gx = (float) (ggx) / 131.0;
@@ -272,7 +272,7 @@ void mpu6050_initialize(void)
 {
 	mpu6050_setClockSource(MPU6050_CLOCK_PLL_XGYRO);
 	mpu6050_setFullScaleGyroRange(MPU6050_GYRO_FS_250);
-	mpu6050_setFullScaleAccelRange(MPU6050_ACCEL_FS_2);
+	mpu6050_setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
 	mpu6050_setSleepEnabled(0);
 }
 
@@ -402,6 +402,7 @@ uint8_t mpu6050_dmpInitialize(void)
 			mpu6050_setDLPFMode(MPU6050_DLPF_BW_42);
 
 			mpu6050_setFullScaleGyroRange(MPU6050_GYRO_FS_2000);
+			mpu6050_setFullScaleAccelRange(MPU6050_ACCEL_FS_2);
 
 			mpu6050_setDMPConfig1(0x03);
 			mpu6050_setDMPConfig2(0x00);
@@ -591,9 +592,9 @@ uint8_t mpu6050_dmpGetAccel(VectorInt16 *v, uint8_t *packet)
 
 uint8_t mpu6050_dmpGetLinearAccel(VectorInt16 *v, VectorInt16 *vRaw, VectorFloat *gravity)
 {
-	v->x = vRaw->x - gravity->x * 4096;
-	v->y = vRaw->y - gravity->y * 4096;
-	v->z = vRaw->z - gravity->z * 4096;
+	v->x = vRaw->x - gravity->x;
+	v->y = vRaw->y - gravity->y;
+	v->z = vRaw->z - gravity->z;
 	return 1;
 }
 

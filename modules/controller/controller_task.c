@@ -84,6 +84,16 @@ float offset_gz_pre = 0;
 float offset_gx_filter = 0.03;
 float offset_gy_filter = 0.03;
 float offset_gz_filter = 0.03;
+
+float offset_ax = 0;
+float offset_ay = 0;
+float offset_az = 0;
+float offset_ax_pre = 0;
+float offset_ay_pre = 0;
+float offset_az_pre = 0;
+float offset_ax_filter = 0.03;
+float offset_ay_filter = 0.03;
+float offset_az_filter = 0.03;
 // 零偏]
 
 //[高度控制
@@ -187,7 +197,7 @@ void ctl_lock_zero(void)
 	ctl_integral_alt = 0;
 }
 
-void ctl_offset(float x, float y, float z, float gx, float gy, float gz)
+void ctl_offset(float x, float y, float z, float gx, float gy, float gz, float ax, float ay, float az)
 {
 	//角度
 	offset_x = x * offset_x_filter + offset_x_pre * (1.0 - offset_x_filter);
@@ -204,9 +214,17 @@ void ctl_offset(float x, float y, float z, float gx, float gy, float gz)
 	offset_gx_pre = offset_gx;
 	offset_gy_pre = offset_gy;
 	offset_gz_pre = offset_gz;
+
+	//加速度
+	offset_ax = ax * offset_ax_filter + offset_ax_pre * (1.0 - offset_ax_filter);
+	offset_ay = ay * offset_ay_filter + offset_ay_pre * (1.0 - offset_ay_filter);
+	offset_az = az * offset_az_filter + offset_az_pre * (1.0 - offset_az_filter);
+	offset_ax_pre = offset_ax;
+	offset_ay_pre = offset_ay;
+	offset_az_pre = offset_az;
 }
 
-void ctl_offset_z(float z, float gz)
+void ctl_offset_z(float z, float gz, float az)
 {
 	//角度
 	offset_z = z * offset_z_filter + offset_z_pre * (1.0 - offset_z_filter);
@@ -214,6 +232,9 @@ void ctl_offset_z(float z, float gz)
 	//角速度
 	offset_gz = gz * offset_gz_filter + offset_gz_pre * (1.0 - offset_gz_filter);
 	offset_gz_pre = offset_gz;
+	//加速度
+	offset_az = az * offset_az_filter + offset_az_pre * (1.0 - offset_az_filter);
+	offset_az_pre = offset_az;
 }
 
 void ctl_offset_alt_press(void)
@@ -276,16 +297,23 @@ void alt_calc(double alt1, double az, double dt)
 	alt1_pre = alt1_v;
 
 	//速度变化量
-	vel_mpu = az * dt;
+	vel_mpu += az * dt;
+	// if (vel_mpu > 0.2)
+	// {
+	// 	vel_mpu = 0.2;
+	// }
+	// else if (vel_mpu < -0.2)
+	// {
+	// 	vel_mpu = -0.2;
+	// }
 	//位移变化量
 	alt_mpu += vel_mpu * dt;
 
-	double K = 0.75;
+	double K = 0.5;
 	//互补滤波
 	// double alt_q = (alt1_v - alt2) * K + alt2;
 	alt_q = alt1_v * (1.0 - K) + alt_mpu * K;
-
-	// printf("%+6d\n", (int)(alt_q * 1000.0));
+	// printf("%+6d %+6d %+6d\n", (int)(alt_mpu * 1000.0), (int)(alt1_v * 1000.0), (int)(alt_q * 1000.0));
 }
 
 void* controller_pthread(void* arg)
@@ -380,6 +408,10 @@ void* controller_pthread(void* arg)
 		float gy = xyz_value[4];
 		float gz = xyz_value[5];
 
+		float ax = xyz_value[6];
+		float ay = xyz_value[7];
+		float az = xyz_value[8];
+
 		float t_x = offset_x + x;
 		float t_y = offset_y + y;
 		float t_z = offset_z + z;
@@ -387,6 +419,12 @@ void* controller_pthread(void* arg)
 		float t_gx = offset_gx + gx;
 		float t_gy = offset_gy + gy;
 		float t_gz = offset_gz + gz;
+
+		float t_ax = offset_ax + ax;
+		float t_ay = offset_ay + ay;
+		float t_az = offset_az + az;
+
+		double t_alt_press = alt_press + offset_alt_press;
 
 		//已解锁
 		if (ctl_arming)
@@ -427,7 +465,7 @@ void* controller_pthread(void* arg)
 
 #if __ALT_MODE_
 			// [高度控制
-			alt_calc(alt_press + offset_alt_press, mpu_value[8], 0.01);
+			alt_calc(t_alt_press, t_az, 0.01);
 
 			float exp = (ctl_thro - 0.5) * 0.1;
 			alt_expect_total += exp * alt_expect_rate;
@@ -436,8 +474,9 @@ void* controller_pthread(void* arg)
 			float ctl_alt = ctl_pid(devi_alt, devi_alt_pre, ctl_param_alt_p, ctl_param_alt_i, ctl_param_alt_d, &ctl_integral_alt, 0.85);
 			devi_alt_pre = devi_alt;
 
+			// printf("%+6d %+6d\n", (int)(az * 1000.0), (int)(t_az * 1000.0));
 			// printf("%+6d %+6d %+6d ", (int)(exp * 1000.0), (int)(alt_q * 1000.0), (int)(devi_alt * 1000.0));
-			// printf("%+6d\n", (int)(ctl_alt * 1000.0));
+			// printf("%+6d %+6d %+6d\n", (int)(alt_mpu * 1000.0), (int)(t_alt_press * 1000.0), (int)(alt_q * 1000.0));
 			// 高度控制]
 #endif
 
@@ -445,7 +484,7 @@ void* controller_pthread(void* arg)
 			if (ctl_thro < 0.1)
 			{
 				ctl_lock_zero();
-				ctl_offset_z(-z, -gz);
+				ctl_offset_z(-z, -gz, -az);
 				ctl_offset_alt_press();
 				ctl_mixer(0, 0, 0, 0, ctl_motor);
 			}
@@ -472,7 +511,7 @@ void* controller_pthread(void* arg)
 			//校准
 			if (ctl_calibrate >= 1)
 			{
-				ctl_offset(-x, -y, -z, -gx, -gy, -gz);
+				ctl_offset(-x, -y, -z, -gx, -gy, -gz, -ax, -ay, -az);
 				ctl_calibrate++;
 			}
 			if (ctl_calibrate > 1000)
@@ -483,7 +522,7 @@ void* controller_pthread(void* arg)
 			}
 			if (ctl_calibrate == 0)
 			{
-				ctl_offset_z(-z, -gz);
+				ctl_offset_z(-z, -gz, -az);
 			}
 			ctl_offset_alt_press();
 			ctl_lock_zero();
