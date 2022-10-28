@@ -22,7 +22,7 @@ extern float ctl_roll;
 extern float ctl_yaw;
 extern uint8_t ctl_sw[4];
 
-float ctl_angle = 10.0f * M_PI / 180.0f;
+float ctl_angle = 15.0f * M_PI / 180.0f;
 float ctl_angle_p = 1.0f;
 float sqrt_2_2 = 0.707106781; // sqrt(2)/2
 
@@ -39,9 +39,9 @@ float ctl_param_yaw_angle_p = 13.0;
 
 // [角速度参数
 // 俯仰 - 滚转
-const float ctl_param_pitch_roll_rate_p = 0.011;
-const float ctl_param_pitch_roll_rate_i = 0.0006;
-const float ctl_param_pitch_roll_rate_d = 0.018;
+const float ctl_param_pitch_roll_rate_p = 0.01;
+const float ctl_param_pitch_roll_rate_i = 0.0015;
+const float ctl_param_pitch_roll_rate_d = 0.02;
 // 航向
 const float ctl_param_yaw_rate_p = 0.02;
 const float ctl_param_yaw_rate_i = 0.0012;
