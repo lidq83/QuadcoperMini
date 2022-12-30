@@ -457,6 +457,7 @@ void* controller_pthread(void* arg)
 			// [更新误差项
 			devi_pitch_angle_pre = devi_pitch_angle;
 			devi_roll_angle_pre = devi_roll_angle;
+			devi_yaw_angle_pre = devi_yaw_angle;
 
 			devi_pitch_rate_pre = devi_pitch_rate;
 			devi_roll_rate_pre = devi_roll_rate;
