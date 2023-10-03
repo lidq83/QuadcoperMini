@@ -5,6 +5,17 @@
  * driver ms5611 build for I2C communication
  */
 
+// 配置MS5611传感器的更新频率为100Hz
+void MS5611_ConfigureUpdateRate(I2C_HandleTypeDef* I2Cx)
+{
+	 uint8_t cmd[2];
+    cmd[0] = 0x0A;  // 控制寄存器地址
+    cmd[1] = 0x06;  // 设置值，参考MS5611数据手册
+
+    HAL_I2C_Master_Transmit(I2Cx, MS5611_SLAVE_ADDR, cmd, 2, 1000);
+	sleep_ticks(4);
+}
+
 /*
  * Function for reseting the sensor
  */
@@ -66,6 +77,7 @@ uint8_t MS5611_PROM_read(I2C_HandleTypeDef* I2Cx, MS5611_t* datastruct)
 uint8_t MS5611_init(I2C_HandleTypeDef* I2Cx, MS5611_t* datastruct)
 {
 	MS5611_Rest(I2Cx);
+	MS5611_ConfigureUpdateRate(I2Cx);
 	datastruct->adress = MS5611_SLAVE_ADDR; // add slave adress to the datastruct
 	MS5611_PROM_read(I2Cx, datastruct);
 	return MS5611_OK;

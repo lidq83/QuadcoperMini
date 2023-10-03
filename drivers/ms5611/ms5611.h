@@ -47,6 +47,8 @@ typedef struct
 	int32_t P; // Actual pressure
 } MS5611_t;
 
+// 配置MS5611传感器的更新频率为100Hz
+void MS5611_ConfigureUpdateRate(I2C_HandleTypeDef* I2Cx);
 void MS5611_Rest(I2C_HandleTypeDef* I2Cx);
 uint8_t MS5611_init(I2C_HandleTypeDef* I2Cx, MS5611_t* datastruct);
 uint8_t MS5611_PROM_read(I2C_HandleTypeDef* I2Cx, MS5611_t* datastruct);

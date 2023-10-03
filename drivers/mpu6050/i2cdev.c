@@ -295,7 +295,7 @@ int i2cdev_writeWords(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint16_t
 	}
 
 	extern I2C_HandleTypeDef hi2c1;
-	HAL_I2C_Mem_Write(&hi2c1, devAddr, regAddr, I2C_MEMADD_SIZE_8BIT, data, length * 2, 0xfff);
+	HAL_I2C_Mem_Write(&hi2c1, devAddr, regAddr, I2C_MEMADD_SIZE_8BIT, (uint8_t*)data, length * 2, 0xfff);
 
 	return 1;
 }
