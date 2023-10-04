@@ -10,7 +10,7 @@
 #include <mpu6050.h>
 #include <stdio.h>
 
-#define __ALT_MODE_ (0)
+#define __ALT_MODE_ (1)
 
 #define MAGIC_NUM (0x1F28E9C4)
 
@@ -26,7 +26,7 @@ float ctl_angle = 15.0f * M_PI / 180.0f;
 float ctl_angle_p = 1.0f;
 float sqrt_2_2 = 0.707106781; // sqrt(2)/2
 
-//航向期望角（总和）
+// 航向期望角（总和）
 float yaw_expect_rate = 0.03; // 0.3弧度/10ms
 float yaw_expect_total = 0;
 
@@ -112,10 +112,10 @@ double alt_mpu = 0;
 
 double offset_alt_press = 0;
 
-//高度期望（总和）
+// 高度期望（总和）
 float alt_expect_rate = 0.25; // 0.1CM/10ms = 1CM/S
 float alt_expect_total = 0;
-//高度控制]
+// 高度控制]
 
 // 电机控制量
 float ctl_motor[4] = { 0 };
@@ -126,7 +126,7 @@ uint32_t ctl_pwm[4] = { 0 };
 float mpu_value[9] = { 0 };
 float xyz_value[9] = { 0 };
 float xyz_value_pre[9] = { 0 };
-float xyz_value_filter[9] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 }; //暂不启用低通滤波
+float xyz_value_filter[9] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 }; // 暂不启用低通滤波
 
 int ctl_arming = 0;
 int ctl_calibrate = 0;
@@ -199,7 +199,7 @@ void ctl_lock_zero(void)
 
 void ctl_offset(float x, float y, float z, float gx, float gy, float gz, float ax, float ay, float az)
 {
-	//角度
+	// 角度
 	offset_x = x * offset_x_filter + offset_x_pre * (1.0 - offset_x_filter);
 	offset_y = y * offset_y_filter + offset_y_pre * (1.0 - offset_y_filter);
 	offset_z = z * offset_z_filter + offset_z_pre * (1.0 - offset_z_filter);
@@ -207,7 +207,7 @@ void ctl_offset(float x, float y, float z, float gx, float gy, float gz, float a
 	offset_y_pre = offset_y;
 	offset_z_pre = offset_z;
 
-	//角速度
+	// 角速度
 	offset_gx = gx * offset_gx_filter + offset_gx_pre * (1.0 - offset_gx_filter);
 	offset_gy = gy * offset_gy_filter + offset_gy_pre * (1.0 - offset_gy_filter);
 	offset_gz = gz * offset_gz_filter + offset_gz_pre * (1.0 - offset_gz_filter);
@@ -215,7 +215,7 @@ void ctl_offset(float x, float y, float z, float gx, float gy, float gz, float a
 	offset_gy_pre = offset_gy;
 	offset_gz_pre = offset_gz;
 
-	//加速度
+	// 加速度
 	offset_ax = ax * offset_ax_filter + offset_ax_pre * (1.0 - offset_ax_filter);
 	offset_ay = ay * offset_ay_filter + offset_ay_pre * (1.0 - offset_ay_filter);
 	offset_az = az * offset_az_filter + offset_az_pre * (1.0 - offset_az_filter);
@@ -226,13 +226,13 @@ void ctl_offset(float x, float y, float z, float gx, float gy, float gz, float a
 
 void ctl_offset_z(float z, float gz, float az)
 {
-	//角度
+	// 角度
 	offset_z = z * offset_z_filter + offset_z_pre * (1.0 - offset_z_filter);
 	offset_z_pre = offset_z;
-	//角速度
+	// 角速度
 	offset_gz = gz * offset_gz_filter + offset_gz_pre * (1.0 - offset_gz_filter);
 	offset_gz_pre = offset_gz;
-	//加速度
+	// 加速度
 	offset_az = az * offset_az_filter + offset_az_pre * (1.0 - offset_az_filter);
 	offset_az_pre = offset_az;
 }
@@ -289,6 +289,61 @@ void ctl_output(void)
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, ctl_pwm[3]);
 }
 
+// ##############################################################################
+
+double dt = 0.01;
+double P = 1.0; // 高度估计的协方差
+double Q = 0.02; // 过程噪声的方差
+double R = (7.06454e-05 + 0.159593) / 4.0; // 观测噪声的方差
+
+// 计算单维数组样本的噪声方差
+double calculate_variance(double* data, int size)
+{
+	if (size <= 1)
+	{
+		// 样本数量太少，无法计算方差
+		return 0.0;
+	}
+
+	// 计算平均值
+	double sum = 0.0;
+	for (int i = 0; i < size; i++)
+	{
+		sum += data[i];
+	}
+	double mean = sum / size;
+
+	// 计算方差
+	double variance = 0.0;
+	for (int i = 0; i < size; i++)
+	{
+		double diff = data[i] - mean;
+		variance += diff * diff;
+	}
+	variance /= (size - 1); // 使用无偏估计
+
+	return variance;
+}
+
+// 更新卡尔曼滤波器状态估计和协方差
+void update_kalman_filter(double R, double z, double* height_estimate, double* velocity_estimate, double* P)
+{
+	// 预测步骤
+	double predicted_height = (*height_estimate) + dt * (*velocity_estimate);
+	double predicted_velocity = (*velocity_estimate);
+
+	// 更新步骤
+	double residual = z - predicted_height;
+	double K = (*P) / ((*P) + R);
+	*height_estimate = predicted_height + K * residual;
+	*velocity_estimate = predicted_velocity + K * (residual / dt);
+
+	// 更新协方差
+	*P = (1 - K) * (*P) + Q;
+}
+
+// ##############################################################################
+
 double alt1_pre = 0;
 
 void alt_calc(double alt1, double az, double dt)
@@ -296,7 +351,7 @@ void alt_calc(double alt1, double az, double dt)
 	double alt1_v = alt1 * 0.1 + alt1_pre * 0.9;
 	alt1_pre = alt1_v;
 
-	//速度变化量
+	// 速度变化量
 	vel_mpu += az * dt;
 	// if (vel_mpu > 0.2)
 	// {
@@ -306,12 +361,12 @@ void alt_calc(double alt1, double az, double dt)
 	// {
 	// 	vel_mpu = -0.2;
 	// }
-	//位移变化量
+	// 位移变化量
 	alt_mpu += vel_mpu * dt;
 
 	double K = 0.5;
-	//互补滤波
-	// double alt_q = (alt1_v - alt2) * K + alt2;
+	// 互补滤波
+	//  double alt_q = (alt1_v - alt2) * K + alt2;
 	alt_q = alt1_v * (1.0 - K) + alt_mpu * K;
 	// printf("%+6d %+6d %+6d\n", (int)(alt_mpu * 1000.0), (int)(alt1_v * 1000.0), (int)(alt_q * 1000.0));
 }
@@ -366,6 +421,12 @@ void* controller_pthread(void* arg)
 	}
 	printf("Init mpu6050 OK.\n");
 
+	double height_estimate = 0.0; // 初始估计高度
+	double velocity_estimate = 0.0; // 初始估计速度
+
+	double height_integration = 0.0; // 积分高度
+	double pressure_height = 0.0; // 气压计高度
+
 	while (1)
 	{
 		if (ctl_sw[2] == 1)
@@ -390,7 +451,7 @@ void* controller_pthread(void* arg)
 			ctl_angle_p = 1.0f;
 		}
 
-		//读取姿态信息
+		// 读取姿态信息
 		if (mpu6050_value(&mpu_value[0], &mpu_value[1], &mpu_value[2], &mpu_value[3], &mpu_value[4], &mpu_value[5], &mpu_value[6], &mpu_value[7], &mpu_value[8]) == 0)
 		{
 			for (int i = 0; i < 9; i++)
@@ -424,16 +485,29 @@ void* controller_pthread(void* arg)
 		float t_ay = offset_ay + ay;
 		float t_az = offset_az + az;
 
-		double t_alt_press = alt_press + offset_alt_press;
+#if __ALT_MODE_
+		pressure_height = alt_press;
+		// 更新加速度积分得到的高度
+		height_integration += velocity_estimate * dt + 0.5 * t_az * dt * dt;
 
-		//已解锁
+		// 更新卡尔曼滤波器估计的高度
+		update_kalman_filter(R, pressure_height, &height_estimate, &velocity_estimate, &P);
+
+		// static uint32_t tk = 0;
+		// if (tk++ % 10 == 0)
+		// {
+		// 	printf("%+8d %+8d %+8d\n", (int)(pressure_height * 1000.0), (int)(height_estimate * 1000.0), (int)(velocity_estimate * 1000.0));
+		// }
+#endif
+
+		// 已解锁
 		if (ctl_arming)
 		{
-			//角速度期望转为航向角速期望
+			// 角速度期望转为航向角速期望
 			yaw_expect_total += ctl_yaw * yaw_expect_rate;
 
 			// [外环PID控制
-			//根据角度期望计算角度误差
+			// 根据角度期望计算角度误差
 			float devi_pitch_angle = (-ctl_pitch) * (ctl_angle * ctl_angle_p) - t_x;
 			float devi_roll_angle = (-ctl_roll) * (ctl_angle * ctl_angle_p) - t_y;
 			float devi_yaw_angle = yaw_expect_total - t_z;
@@ -444,7 +518,7 @@ void* controller_pthread(void* arg)
 			// 外环PID控制]
 
 			// [内环PID控制
-			//根据角速度期望计算角度误差
+			// 根据角速度期望计算角度误差
 			float devi_pitch_rate = ctl_pitch_angle - t_gx;
 			float devi_roll_rate = ctl_roll_angle - t_gy;
 			float devi_yaw_rate = ctl_yaw_angle - t_gz;
@@ -465,15 +539,16 @@ void* controller_pthread(void* arg)
 			// 更新误差项]
 
 #if __ALT_MODE_
-			// [高度控制
-			alt_calc(t_alt_press, t_az, 0.01);
 
-			float exp = (ctl_thro - 0.5) * 0.1;
-			alt_expect_total += exp * alt_expect_rate;
+			// // [高度控制
+			// alt_calc(t_alt_press, t_az, 0.01);
 
-			float devi_alt = alt_expect_total - alt_q;
-			float ctl_alt = ctl_pid(devi_alt, devi_alt_pre, ctl_param_alt_p, ctl_param_alt_i, ctl_param_alt_d, &ctl_integral_alt, 0.85);
-			devi_alt_pre = devi_alt;
+			// float exp = (ctl_thro - 0.5) * 0.1;
+			// alt_expect_total += exp * alt_expect_rate;
+
+			// float devi_alt = alt_expect_total - alt_q;
+			// float ctl_alt = ctl_pid(devi_alt, devi_alt_pre, ctl_param_alt_p, ctl_param_alt_i, ctl_param_alt_d, &ctl_integral_alt, 0.85);
+			// devi_alt_pre = devi_alt;
 
 			// printf("%+6d %+6d\n", (int)(az * 1000.0), (int)(t_az * 1000.0));
 			// printf("%+6d %+6d %+6d ", (int)(exp * 1000.0), (int)(alt_q * 1000.0), (int)(devi_alt * 1000.0));
@@ -481,7 +556,7 @@ void* controller_pthread(void* arg)
 			// 高度控制]
 #endif
 
-			//混控
+			// 混控
 			if (ctl_thro < 0.1)
 			{
 				ctl_lock_zero();
@@ -493,23 +568,23 @@ void* controller_pthread(void* arg)
 			{
 
 #if __ALT_MODE_
-				ctl_mixer(0.4 + ctl_alt, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
+				// ctl_mixer(0.4 + ctl_alt, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
 #else
 				ctl_mixer(ctl_thro, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
 #endif
 			}
 		}
-		//未解锁
+		// 未解锁
 		else
 		{
-			//未校准时校准按钮被按下
+			// 未校准时校准按钮被按下
 			if (ctl_sw[0] == 1 && ctl_calibrate == 0)
 			{
-				//开始校准
+				// 开始校准
 				ctl_calibrate = 1;
 			}
 
-			//校准
+			// 校准
 			if (ctl_calibrate >= 1)
 			{
 				ctl_offset(-x, -y, -z, -gx, -gy, -gz, -ax, -ay, -az);

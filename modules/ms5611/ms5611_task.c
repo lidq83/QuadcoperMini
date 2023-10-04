@@ -37,8 +37,8 @@ void* ms5611_pthread(void* arg)
 
 		alt_press = convertToAltitude((double)ms5611.P);
 		
-		//printf("%8d %8d\n", (int)ms5611.P, (int)(alt_press * 1000.0));
-		sleep_ticks(10);
+		// printf("%+8d\n", (int)(alt_press * 1000.0));
+		sleep_ticks(20);
 	}
 	return NULL;
 }
