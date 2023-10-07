@@ -293,8 +293,8 @@ void ctl_output(void)
 
 double dt = 0.01;
 double P = 1.0; // 高度估计的协方差
-double Q = 0.02; // 过程噪声的方差
-double R = (7.06454e-05 + 0.159593) / 4.0; // 观测噪声的方差
+double Q = 0.1; // 过程噪声的方差
+double R = (4.07377 + 0.0480931) / 4.0; // 观测噪声的方差
 
 // 计算单维数组样本的噪声方差
 double calculate_variance(double* data, int size)
@@ -427,6 +427,9 @@ void* controller_pthread(void* arg)
 	double height_integration = 0.0; // 积分高度
 	double pressure_height = 0.0; // 气压计高度
 
+	double h_pre = 0;
+	double h_f = 0.3;
+
 	while (1)
 	{
 		if (ctl_sw[2] == 1)
@@ -488,16 +491,19 @@ void* controller_pthread(void* arg)
 #if __ALT_MODE_
 		pressure_height = alt_press;
 		// 更新加速度积分得到的高度
-		height_integration += velocity_estimate * dt + 0.5 * t_az * dt * dt;
+		height_integration += velocity_estimate * dt + 0.5 * (az - 9.62) * dt * dt;
 
 		// 更新卡尔曼滤波器估计的高度
 		update_kalman_filter(R, pressure_height, &height_estimate, &velocity_estimate, &P);
 
-		// static uint32_t tk = 0;
-		// if (tk++ % 10 == 0)
-		// {
-		// 	printf("%+8d %+8d %+8d\n", (int)(pressure_height * 1000.0), (int)(height_estimate * 1000.0), (int)(velocity_estimate * 1000.0));
-		// }
+		double h = height_estimate * h_f + (1.0 - h_f) * h_pre;
+		h_pre = h;
+
+		static uint32_t tk = 0;
+		if (tk++ % 2 == 0)
+		{
+			printf("%+8d %+8d %+8d\n", (int)(pressure_height * 1000.0), (int)(height_estimate * 1000.0), (int)(h * 1000.0));
+		}
 #endif
 
 		// 已解锁

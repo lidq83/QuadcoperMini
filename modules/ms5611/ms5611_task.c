@@ -28,6 +28,9 @@ void* ms5611_pthread(void* arg)
 	MS5611_t ms5611 = { 0 };
 	MS5611_init(&hi2c2, &ms5611);
 
+	double alt_pre = 0;
+	double alt_f = 0.1;
+
 	while (1)
 	{
 		MS5611_read_press(&hi2c2, &ms5611, MS5611_CMD_CONVERT_D1_4096);
@@ -35,7 +38,9 @@ void* ms5611_pthread(void* arg)
 
 		MS5611_calculate(&ms5611);
 
-		alt_press = convertToAltitude((double)ms5611.P);
+		double a = convertToAltitude((double)ms5611.P);
+		alt_press = a * alt_f + alt_pre * (1.0 - alt_f);
+		alt_pre = alt_press;
 		
 		// printf("%+8d\n", (int)(alt_press * 1000.0));
 		sleep_ticks(20);
