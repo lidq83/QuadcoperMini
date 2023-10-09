@@ -97,11 +97,15 @@ float offset_az_filter = 0.03;
 // 零偏]
 
 //[高度控制
+
+double offset_alt_estimate = 0;
+double alt_estimate = 0.0; // 初始估计高度
+
 extern double alt_press;
 
-const float ctl_param_alt_p = 0.3;
-const float ctl_param_alt_i = 0.01;
-const float ctl_param_alt_d = 2.7;
+const float ctl_param_alt_p = 0.12;
+const float ctl_param_alt_i = 0.005;
+const float ctl_param_alt_d = 0.08;
 
 float ctl_integral_alt = 0;
 float devi_alt_pre = 0;
@@ -109,8 +113,6 @@ float devi_alt_pre = 0;
 double alt_q = 0;
 double vel_mpu = 0;
 double alt_mpu = 0;
-
-double offset_alt_press = 0;
 
 // 高度期望（总和）
 float alt_expect_rate = 0.25; // 0.1CM/10ms = 1CM/S
@@ -239,7 +241,7 @@ void ctl_offset_z(float z, float gz, float az)
 
 void ctl_offset_alt_press(void)
 {
-	offset_alt_press = -alt_press;
+	offset_alt_estimate = -alt_estimate;
 }
 
 void ctl_offset_save(void)
@@ -344,33 +346,6 @@ void update_kalman_filter(double R, double z, double* height_estimate, double* v
 
 // ##############################################################################
 
-double alt1_pre = 0;
-
-void alt_calc(double alt1, double az, double dt)
-{
-	double alt1_v = alt1 * 0.1 + alt1_pre * 0.9;
-	alt1_pre = alt1_v;
-
-	// 速度变化量
-	vel_mpu += az * dt;
-	// if (vel_mpu > 0.2)
-	// {
-	// 	vel_mpu = 0.2;
-	// }
-	// else if (vel_mpu < -0.2)
-	// {
-	// 	vel_mpu = -0.2;
-	// }
-	// 位移变化量
-	alt_mpu += vel_mpu * dt;
-
-	double K = 0.5;
-	// 互补滤波
-	//  double alt_q = (alt1_v - alt2) * K + alt2;
-	alt_q = alt1_v * (1.0 - K) + alt_mpu * K;
-	// printf("%+6d %+6d %+6d\n", (int)(alt_mpu * 1000.0), (int)(alt1_v * 1000.0), (int)(alt_q * 1000.0));
-}
-
 void* controller_pthread(void* arg)
 {
 	uint32_t value[8] = { 0 };
@@ -421,20 +396,16 @@ void* controller_pthread(void* arg)
 	}
 	printf("Init mpu6050 OK.\n");
 
-	double height_estimate = 0.0; // 初始估计高度
 	double velocity_estimate = 0.0; // 初始估计速度
 
 	double height_integration = 0.0; // 积分高度
 	double pressure_height = 0.0; // 气压计高度
 
-	double h_pre = 0;
-	double h_f = 0.3;
-
 	while (1)
 	{
 		if (ctl_sw[2] == 1)
 		{
-			if (ctl_arming == 0 && ctl_thro < 0.1)
+			if (ctl_arming == 0)
 			{
 				ctl_arming = 1;
 				ctl_calibrate = 0;
@@ -491,21 +462,12 @@ void* controller_pthread(void* arg)
 #if __ALT_MODE_
 		pressure_height = alt_press;
 		// 更新加速度积分得到的高度
-		height_integration += velocity_estimate * dt + 0.5 * (az - 9.62) * dt * dt;
+		height_integration += velocity_estimate * dt + 0.5 * t_az * dt * dt;
 
 		// 更新卡尔曼滤波器估计的高度
-		update_kalman_filter(R, pressure_height, &height_estimate, &velocity_estimate, &P);
+		update_kalman_filter(R, pressure_height, &alt_estimate, &velocity_estimate, &P);
 
-		double h = height_estimate * h_f + (1.0 - h_f) * h_pre;
-		h_pre = h;
-
-		static uint32_t tk = 0;
-		if (tk++ % 2 == 0)
-		{
-			printf("%+8d %+8d %+8d\n", (int)(pressure_height * 1000.0), (int)(height_estimate * 1000.0), (int)(h * 1000.0));
-		}
 #endif
-
 		// 已解锁
 		if (ctl_arming)
 		{
@@ -546,39 +508,40 @@ void* controller_pthread(void* arg)
 
 #if __ALT_MODE_
 
-			// // [高度控制
-			// alt_calc(t_alt_press, t_az, 0.01);
+			// [高度控制
 
-			// float exp = (ctl_thro - 0.5) * 0.1;
-			// alt_expect_total += exp * alt_expect_rate;
+			float exp = (ctl_thro - 0.5) * 0.01;
+			alt_expect_total += exp * alt_expect_rate;
 
-			// float devi_alt = alt_expect_total - alt_q;
-			// float ctl_alt = ctl_pid(devi_alt, devi_alt_pre, ctl_param_alt_p, ctl_param_alt_i, ctl_param_alt_d, &ctl_integral_alt, 0.85);
-			// devi_alt_pre = devi_alt;
+			double t_alt = alt_estimate + offset_alt_estimate;
+			float devi_alt = alt_expect_total - t_alt;
+			float ctl_alt = ctl_pid(devi_alt, devi_alt_pre, ctl_param_alt_p, ctl_param_alt_i, ctl_param_alt_d, &ctl_integral_alt, 1.0);
+			devi_alt_pre = devi_alt;
 
-			// printf("%+6d %+6d\n", (int)(az * 1000.0), (int)(t_az * 1000.0));
-			// printf("%+6d %+6d %+6d ", (int)(exp * 1000.0), (int)(alt_q * 1000.0), (int)(devi_alt * 1000.0));
-			// printf("%+6d %+6d %+6d\n", (int)(alt_mpu * 1000.0), (int)(t_alt_press * 1000.0), (int)(alt_q * 1000.0));
+			// if (tk % 5 == 0)
+			// {
+			// 	printf("%+6d %+6d %+6d %+6d\n", (int)(ctl_thro * 1000.0), (int)(t_alt * 1000.0), (int)(alt_expect_total * 1000.0), (int)(ctl_alt * 1000.0));
+			// }
 			// 高度控制]
 #endif
 
 			// 混控
-			if (ctl_thro < 0.1)
-			{
-				ctl_lock_zero();
-				ctl_offset_z(-z, -gz, -az);
-				ctl_offset_alt_press();
-				ctl_mixer(0, 0, 0, 0, ctl_motor);
-			}
-			else
-			{
+			// if (ctl_thro < 0.1)
+			// {
+			// 	ctl_lock_zero();
+			// 	ctl_offset_z(-z, -gz, -az);
+			// 	ctl_offset_alt_press();
+			// 	ctl_mixer(0, 0, 0, 0, ctl_motor);
+			// }
+			// else
+			// {
 
 #if __ALT_MODE_
-				// ctl_mixer(0.4 + ctl_alt, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
+				ctl_mixer(0.3 + ctl_alt, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
 #else
 				ctl_mixer(ctl_thro, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
 #endif
-			}
+			// }
 		}
 		// 未解锁
 		else

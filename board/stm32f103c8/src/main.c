@@ -43,7 +43,7 @@ int main(void)
 
 	led_task();
 	controller_task();
-	// nrf2401_task();
+	nrf2401_task();
 	ms5611_task();
 
 	_kernel_startup = 1;
