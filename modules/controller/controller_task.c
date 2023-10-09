@@ -295,8 +295,9 @@ void ctl_output(void)
 
 double dt = 0.01;
 double P = 1.0; // 高度估计的协方差
-double Q = 0.1; // 过程噪声的方差
-double R = (4.07377 + 0.0480931) / 4.0; // 观测噪声的方差
+double Q = 0.05; // 过程噪声的方差
+// double R = (4.07377 + 0.0480931) / 4.0; // 观测噪声的方差
+double R = (7.06454e-05 + 0.159593) / 4.0;
 
 // 计算单维数组样本的噪声方差
 double calculate_variance(double* data, int size)
@@ -518,7 +519,7 @@ void* controller_pthread(void* arg)
 			float ctl_alt = ctl_pid(devi_alt, devi_alt_pre, ctl_param_alt_p, ctl_param_alt_i, ctl_param_alt_d, &ctl_integral_alt, 1.0);
 			devi_alt_pre = devi_alt;
 
-			// if (tk % 5 == 0)
+			// if (tk % 2 == 0)
 			// {
 			// 	printf("%+6d %+6d %+6d %+6d\n", (int)(ctl_thro * 1000.0), (int)(t_alt * 1000.0), (int)(alt_expect_total * 1000.0), (int)(ctl_alt * 1000.0));
 			// }
@@ -542,6 +543,7 @@ void* controller_pthread(void* arg)
 				ctl_mixer(ctl_thro, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
 #endif
 			// }
+			// ctl_mixer(0, 0, 0, 0, ctl_motor);
 		}
 		// 未解锁
 		else
