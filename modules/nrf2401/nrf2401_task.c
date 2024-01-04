@@ -17,47 +17,16 @@ float ctl_thro = 0;
 float ctl_pitch = 0;
 float ctl_roll = 0;
 float ctl_yaw = 0;
-uint8_t ctl_sw[4] = { 0 };
+uint8_t ctl_sw[16] = { 0 };
 
 static sem_t sem_sig = { 0 };
 static uint32_t tk_recv = 0;
 
-void ctl_switch(uint16_t* ctl)
+void ctl_switch(uint16_t ctl_sw_ch)
 {
-	if (ctl[4] & 1)
+	for (int i = 0; i < 16; i++)
 	{
-		ctl_sw[0] = 1;
-	}
-	else
-	{
-		ctl_sw[0] = 0;
-	}
-
-	if (ctl[4] & (1 << 1))
-	{
-		ctl_sw[1] = 1;
-	}
-	else
-	{
-		ctl_sw[1] = 0;
-	}
-
-	if (ctl[4] & (1 << 2))
-	{
-		ctl_sw[2] = 1;
-	}
-	else
-	{
-		ctl_sw[2] = 0;
-	}
-
-	if (ctl[4] & (1 << 3))
-	{
-		ctl_sw[3] = 1;
-	}
-	else
-	{
-		ctl_sw[3] = 0;
+		ctl_sw[i] = (ctl_sw_ch >> i) & 1;
 	}
 }
 
@@ -67,7 +36,7 @@ void* nrf2401_pthread(void* arg)
 
 	sem_init(&sem_sig, 0);
 
-	uint16_t ctl[5] = { 0 };
+	uint16_t ctl[10] = { 0 };
 
 	uint8_t rx_buff[32] = { 0 };
 	uint8_t rx_len = 0;
@@ -78,8 +47,7 @@ void* nrf2401_pthread(void* arg)
 	NRF24L01_Set_Power(POWER_0DBM);
 	NRF24L01_Set_Speed(SPEED_250K);
 
-
-	float filter = 1.0f; //不使用滤波（在发射端已经滤波了）
+	float filter = 1.0f; // 不使用滤波（在发射端已经滤波了）
 
 	float ctl_yaw_last = 0;
 	float ctl_thro_last = 0;
@@ -92,30 +60,21 @@ void* nrf2401_pthread(void* arg)
 	{
 		sem_wait(&sem_sig);
 
-		rx_len = NRF24L01_Read_Reg(R_RX_PL_WID); //读取接收到的数据个数
-		NRF24L01_Read_Buf(RD_RX_PLOAD, rx_buff, rx_len); //接收到数据
+		rx_len = NRF24L01_Read_Reg(R_RX_PL_WID); // 读取接收到的数据个数
+		NRF24L01_Read_Buf(RD_RX_PLOAD, rx_buff, rx_len); // 接收到数据
 		if (rx_len > 0)
 		{
-			// for (int i = 0; i < rx_len; i++)
-			// {
-			// 	printf("%02x ", rx_buff[i]);
-			// }
-			// printf("\n");
-
 			protocol_append(rx_buff, rx_len);
 		}
 
-		NRF24L01_Write_Reg(FLUSH_RX, 0xff); //清除RX FIFO
+		NRF24L01_Write_Reg(FLUSH_RX, 0xff); // 清除RX FIFO
 		NRF24L01_Clear_IRQ_Flag(IRQ_ALL);
 
 		RF24L01_Set_Mode(MODE_RX);
-
 		int ret = protocol_parse(ctl);
 		if (ret == 0)
 		{
 			tk_recv = HAL_GetTick();
-
-			ctl_switch(ctl);
 
 			float roll = ((float)(ctl[0] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 			float pitch = ((float)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
@@ -126,17 +85,26 @@ void* nrf2401_pthread(void* arg)
 			roll = 1.0f - roll * 2.0f;
 			yaw = 1.0f - yaw * 2.0f;
 
-			if (fabs(pitch) < 0.05)
+			// 反向
+			pitch *= -1.0f;
+			roll *= -1.0f;
+			yaw *= -1.0f;
+
+			if (fabs(pitch) < 0.01)
 			{
 				pitch = 0;
 			}
-			if (fabs(roll) < 0.05)
+			if (fabs(roll) < 0.01)
 			{
 				roll = 0;
 			}
-			if (fabs(yaw) < 0.05)
+			if (fabs(yaw) < 0.01)
 			{
 				yaw = 0;
+			}
+			if (thro < 0.01)
+			{
+				thro = 0;
 			}
 
 			ctl_thro = thro * filter + ctl_thro_last * (1.0f - filter);
@@ -148,8 +116,15 @@ void* nrf2401_pthread(void* arg)
 			ctl_roll_last = ctl_roll;
 			ctl_pitch_last = ctl_pitch;
 			ctl_yaw_last = ctl_yaw;
-		}
 
+			ctl_switch(ctl[9]);
+
+			// static uint32_t tk = 0;
+			// if (tk++ % 10 == 0)
+			// {
+			// 	printf("%d %d %d %d\n", (int)(ctl_thro * 1000), (int)(ctl_pitch * 1000), (int)(ctl_roll * 1000), (int)(ctl_yaw * 1000));
+			// }
+		}
 		// sleep_ticks(1);
 	}
 	return NULL;
@@ -168,6 +143,17 @@ void* nrf2401_protected_pthread(void* arg)
 			ctl_pitch = 0;
 			ctl_roll = 0;
 			ctl_yaw = 0;
+
+			led_off(1);
+
+			RF24L01_Init();
+			RF24LL01_Write_Hopping_Point(64);
+			NRF24L01_Set_Power(POWER_0DBM);
+			NRF24L01_Set_Speed(SPEED_250K);
+		}
+		else
+		{
+			led_on(1);
 		}
 
 		sem_post(&sem_sig);

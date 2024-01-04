@@ -16,7 +16,7 @@
 #define P_HEAD_0				0xA5
 #define P_HEAD_1				0x5A
 #define P_SIZE_HEAD				2
-#define P_SIZE_DATA				10
+#define P_SIZE_DATA				20
 #define P_SIZE_CRC				2
 
 typedef struct buff_s

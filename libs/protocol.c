@@ -5,8 +5,8 @@
  *      Author: lidq
  */
 
-#include <protocol.h>
 #include <crc.h>
+#include <protocol.h>
 
 static buff_s bs = { 0 };
 
@@ -15,7 +15,7 @@ void protocol_init(void)
 	memset(&bs, 0, sizeof(buff_s));
 }
 
-void protocol_append(char *buff, int size)
+void protocol_append(char* buff, int size)
 {
 	for (int i = 0; i < size; i++)
 	{
@@ -40,15 +40,15 @@ int protocol_size(void)
 	return size;
 }
 
-int protocol_parse(uint16_t *ctl)
+int protocol_parse(uint16_t* ctl)
 {
 	int cnt = protocol_size();
-	if (cnt < 14)
+	if (cnt < (P_SIZE_HEAD + P_SIZE_DATA + P_SIZE_CRC))
 	{
 		return -1;
 	}
 
-	char buff[16] = { 0 };
+	char buff[(P_SIZE_HEAD + P_SIZE_DATA + P_SIZE_CRC) * 2] = { 0 };
 	uint16_t crc = 0;
 	int ind = 0;
 	int step = 0;
@@ -61,56 +61,56 @@ int protocol_parse(uint16_t *ctl)
 
 		switch (step)
 		{
-			case 0: //HEAD_0
+		case 0: // HEAD_0
+		{
+			ind = 0;
+			step = 0;
+			if (ch == P_HEAD_0)
 			{
-				ind = 0;
-				step = 0;
-				if (ch == P_HEAD_0)
-				{
-					buff[ind] = ch;
-					ind++;
-					step = 1;
-				}
-				break;
-			}
-			case 1: //HEAD_1
-			{
-				step = 0;
-				if (ch == P_HEAD_1)
-				{
-					buff[ind] = ch;
-					ind++;
-					step = 2;
-				}
-				break;
-			}
-			case 2: //DATA
-			{
-				step = 2;
 				buff[ind] = ch;
 				ind++;
-				if (ind >= P_SIZE_HEAD + P_SIZE_DATA)
-				{
-					step = 3;
-				}
-				break;
+				step = 1;
 			}
-			case 3: //CRC_0
+			break;
+		}
+		case 1: // HEAD_1
+		{
+			step = 0;
+			if (ch == P_HEAD_1)
 			{
-				crc = (ch << 0);
-				step = 4;
-				break;
+				buff[ind] = ch;
+				ind++;
+				step = 2;
 			}
-			case 4: //CRC_1
+			break;
+		}
+		case 2: // DATA
+		{
+			step = 2;
+			buff[ind] = ch;
+			ind++;
+			if (ind >= P_SIZE_HEAD + P_SIZE_DATA)
 			{
-				crc |= (ch << 8);
-				step = 5;
-				break;
+				step = 3;
 			}
-			default:
-			{
-				break;
-			}
+			break;
+		}
+		case 3: // CRC_0
+		{
+			crc = (ch << 0);
+			step = 4;
+			break;
+		}
+		case 4: // CRC_1
+		{
+			crc |= (ch << 8);
+			step = 5;
+			break;
+		}
+		default:
+		{
+			break;
+		}
 		}
 		if (step >= 5)
 		{
@@ -125,26 +125,17 @@ int protocol_parse(uint16_t *ctl)
 
 	bs.foot = foot;
 
-	uint16_t crc_calc = calc16crc((uint8_t *) buff, 12);
+	uint16_t crc_calc = calc16crc((uint8_t*)buff, P_SIZE_HEAD + P_SIZE_DATA);
 	if (crc != crc_calc || crc == 0 || crc_calc == 0)
 	{
 		return -3;
 	}
 
-	ctl[0] = buff[2];
-	ctl[0] |= (buff[3] << 8) & 0xff00;
-
-	ctl[1] = buff[4];
-	ctl[1] |= (buff[5] << 8) & 0xff00;
-
-	ctl[2] = buff[6];
-	ctl[2] |= (buff[7] << 8) & 0xff00;
-
-	ctl[3] = buff[8];
-	ctl[3] |= (buff[9] << 8) & 0xff00;
-
-	ctl[4] = buff[10];
-	ctl[4] |= (buff[11] << 8) & 0xff00;
+	for (int i = 0; i < (P_SIZE_DATA / 2); i++)
+	{
+		ctl[i] = buff[(i + 1) * 2];
+		ctl[i] |= (buff[(i + 1) * 2 + 1] << 8) & 0xff00;
+	}
 
 	return 0;
 }

@@ -33,8 +33,8 @@
 #define PCB_CLEANER_PRIO (PROCESS_CNT - 1)
 #define PCB_CLEANER_SIZE (400)
 
-#define CTL_PWM_MAX (2000)
-#define CTL_PWM_MIN (800)
+#define CTL_PWM_MAX (9999)
+#define CTL_PWM_MIN (0)
 #define CTL_PWM_SCALE (CTL_PWM_MAX - CTL_PWM_MIN)
 
 #define PWM_MAX	(10000)

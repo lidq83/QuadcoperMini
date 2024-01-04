@@ -18,7 +18,7 @@ extern float ctl_thro;
 extern float ctl_pitch;
 extern float ctl_roll;
 extern float ctl_yaw;
-extern uint8_t ctl_sw[4];
+extern uint8_t ctl_sw[16];
 
 float ctl_angle = 15.0f * M_PI / 180.0f;
 float ctl_angle_p = 1.5f;
@@ -304,7 +304,7 @@ void* controller_pthread(void* arg)
 
 	while (1)
 	{
-		if (ctl_sw[2] == 1)
+		if (ctl_sw[12] == 1)
 		{
 			if (ctl_arming == 0)
 			{
@@ -317,7 +317,7 @@ void* controller_pthread(void* arg)
 			ctl_arming = 0;
 		}
 
-		if (ctl_sw[3] == 1)
+		if (ctl_sw[13] == 1)
 		{
 			ctl_angle_p = 2.5f;
 		}
@@ -405,7 +405,7 @@ void* controller_pthread(void* arg)
 		else
 		{
 			// 未校准时校准按钮被按下
-			if (ctl_sw[0] == 1 && ctl_calibrate == 0)
+			if (ctl_sw[10] == 1 && ctl_calibrate == 0)
 			{
 				// 开始校准
 				ctl_calibrate = 1;
