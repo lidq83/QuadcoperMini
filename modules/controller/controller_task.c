@@ -21,7 +21,7 @@ void* controller_pthread(void* arg)
 		double dt = timestamp - timepre;
 		timepre = timestamp;
 
-		printf("time=%d\n", (int)(timestamp));
+		// printf("time=%d\n", (int)(timestamp));
 
 		msleep(100);
 	}

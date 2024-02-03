@@ -7,10 +7,9 @@
 
 #include <bmi160.h>
 #include <bmi160_task.h>
+#include <main.h>
 #include <math.h>
 #include <stdio.h>
-
-extern uint64_t get_count(void);
 
 extern TIM_HandleTypeDef htim1;
 
@@ -315,7 +314,7 @@ Quaternion complementaryFilter(double dt, Quaternion q, double ax, double ay, do
 }
 
 extern I2C_HandleTypeDef hi2c1;
-extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi2;
 
 static uint8_t chip_id = 0;
 
@@ -337,9 +336,9 @@ int8_t bmi160_write_spi(uint8_t dev_addr, uint8_t reg_addr, uint8_t* write_data,
 	// CS LOW
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
 
-	// HAL_SPI_Transmit(&hspi1, &reg_addr, 1, HAL_MAX_DELAY);
-	HAL_SPI_TransmitReceive(&hspi1, &d_write, &d_read, 1, HAL_MAX_DELAY);
-	HAL_SPI_Transmit(&hspi1, write_data, len, HAL_MAX_DELAY);
+	// HAL_SPI_Transmit(&hspi2, &reg_addr, 1, HAL_MAX_DELAY);
+	HAL_SPI_TransmitReceive(&hspi2, &d_write, &d_read, 1, HAL_MAX_DELAY);
+	HAL_SPI_Transmit(&hspi2, write_data, len, HAL_MAX_DELAY);
 
 	// CS HIGH
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
@@ -355,9 +354,9 @@ int8_t bmi160_read_spi(uint8_t dev_addr, uint8_t reg_addr, uint8_t* data, uint16
 	// CS LOW
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
 
-	// HAL_SPI_Transmit(&hspi1, &reg_addr, 1, HAL_MAX_DELAY);
-	HAL_SPI_TransmitReceive(&hspi1, &d_write, &d_read, 1, HAL_MAX_DELAY);
-	HAL_SPI_Receive(&hspi1, data, len, HAL_MAX_DELAY);
+	// HAL_SPI_Transmit(&hspi2, &reg_addr, 1, HAL_MAX_DELAY);
+	HAL_SPI_TransmitReceive(&hspi2, &d_write, &d_read, 1, HAL_MAX_DELAY);
+	HAL_SPI_Receive(&hspi2, data, len, HAL_MAX_DELAY);
 
 	// CS HIGH
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
@@ -511,7 +510,7 @@ void* bmi160_pthread(void* arg)
 _restart:
 
 	msleep(200);
-	printf("bmi160 init\n");
+	printf("BMI160 init\n");
 
 	init_bmi160_sensor_driver_interface();
 
@@ -522,7 +521,7 @@ _restart:
 	{
 		goto _restart;
 	}
-	printf("bmi160 ok\n");
+	printf("BMI160 ok\n");
 
 	uint32_t tk = 0;
 
