@@ -55,7 +55,7 @@ DRVS		=	$(ROOTPATH)/drivers
 CFLAGS		+=	-I$(DRVS)
 CFLAGS		+=	-I$(DRVS)/led
 CFLAGS		+=	-I$(DRVS)/flash
-CFLAGS		+=	-I$(DRVS)/mpu6050
+CFLAGS		+=	-I$(DRVS)/bmi160
 CFLAGS		+=	-I$(DRVS)/ms5611
 CFLAGS		+=	-I$(DRVS)/nrf2401
 
@@ -65,6 +65,7 @@ MODULES		=	$(ROOTPATH)/modules
 CFLAGS		+=	-I$(MODULES)
 CFLAGS		+=	-I$(MODULES)/led
 CFLAGS		+=	-I$(MODULES)/controller
+CFLAGS		+=	-I$(MODULES)/bmi160
 CFLAGS		+=	-I$(MODULES)/ms5611
 CFLAGS		+=	-I$(MODULES)/nrf2401
 
@@ -81,8 +82,7 @@ SRC			+=	$(SRCS)/main.c
 # Drivers
 SRC			+=	$(DRVS)/led/led.c \
 				$(DRVS)/flash/flash.c \
-				$(DRVS)/mpu6050/i2cdev.c \
-				$(DRVS)/mpu6050/mpu6050.c \
+				$(DRVS)/bmi160/bmi160.c \
 				$(DRVS)/ms5611/ms5611.c \
 				$(DRVS)/nrf2401/nrf2401.c
 
@@ -90,6 +90,7 @@ SRC			+=	$(DRVS)/led/led.c \
 # Modules
 SRC			+=	$(MODULES)/led/led_task.c \
 				$(MODULES)/controller/controller_task.c \
+				$(MODULES)/bmi160/bmi160_task.c \
 				$(MODULES)/ms5611/ms5611_task.c \
 				$(MODULES)/nrf2401/nrf2401_task.c
 

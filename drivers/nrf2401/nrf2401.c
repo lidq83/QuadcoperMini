@@ -510,7 +510,7 @@ void NRF24L01_check(void)
 		{
 			printf(g_ErrorString);
 		}
-		sleep_ticks(1500);
+		msleep(1500);
 	}
 }
 
@@ -566,7 +566,7 @@ uint8_t NRF24L01_TxPacket(uint8_t *txbuf, uint8_t Length)
 	RF24L01_SET_CE_HIGH();							//启动发送
 	// while (0 != RF24L01_GET_IRQ_STATUS())
 	// {
-	// 	sleep_ticks(1);
+	// 	msleep(1);
 	// 	if (500 == l_MsTimes++) //500ms还没有发送成功，重新初始化设备
 	// 	{
 	// 		RF24L01_Init();
@@ -611,7 +611,7 @@ uint8_t NRF24L01_RxPacket(uint8_t *rxbuf)
 
 	while (0 != RF24L01_GET_IRQ_STATUS())
 	{
-		sleep_ticks(1);
+		msleep(1);
 
 		if (500 == l_100MsTimes++) //3s没接收过数据，重新初始化模块
 		{

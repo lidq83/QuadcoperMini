@@ -3,8 +3,8 @@
 
 #include "stm32f1xx_hal.h"
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim);
-
 void Error_Handler(void);
+
+uint64_t get_count(void);
 
 #endif

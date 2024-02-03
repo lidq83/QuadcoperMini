@@ -50,7 +50,7 @@ void* led_pthread(void* arg)
 		// 	}
 		// }
 
-		sleep_ticks(125);
+		msleep(125);
 	}
 	return NULL;
 }

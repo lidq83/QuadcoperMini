@@ -43,7 +43,7 @@ void* ms5611_pthread(void* arg)
 		alt_pre = alt_press;
 		
 		// printf("%+8d\n", (int)(alt_press * 1000.0));
-		sleep_ticks(20);
+		msleep(20);
 	}
 	return NULL;
 }

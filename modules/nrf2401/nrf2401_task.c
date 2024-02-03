@@ -125,14 +125,14 @@ void* nrf2401_pthread(void* arg)
 			// 	printf("%d %d %d %d\n", (int)(ctl_thro * 1000), (int)(ctl_pitch * 1000), (int)(ctl_roll * 1000), (int)(ctl_yaw * 1000));
 			// }
 		}
-		// sleep_ticks(1);
+		// msleep(1);
 	}
 	return NULL;
 }
 
 void* nrf2401_protected_pthread(void* arg)
 {
-	sleep_ticks(1000);
+	msleep(1000);
 
 	while (1)
 	{
@@ -157,7 +157,7 @@ void* nrf2401_protected_pthread(void* arg)
 		}
 
 		sem_post(&sem_sig);
-		sleep_ticks(100);
+		msleep(100);
 	}
 	return NULL;
 }

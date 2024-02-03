@@ -1,5 +1,6 @@
 #include "main.h"
 
+#include "bmi160_task.h"
 #include "controller_task.h"
 #include "led_task.h"
 #include "ms5611_task.h"
@@ -8,24 +9,30 @@
 #include <core.h>
 #include <sche.h>
 
-
 ADC_HandleTypeDef hadc1;
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
 SPI_HandleTypeDef hspi1;
+SPI_HandleTypeDef hspi2;
+TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim2;
 UART_HandleTypeDef huart1;
 
-int _kernel_startup = 0;
+volatile int _kernel_startup = 0;
+volatile uint64_t TimerCnt = 0;
 
 void SystemClock_Config(void);
 void MX_GPIO_Init(void);
 void MX_USART1_UART_Init(void);
 void MX_I2C1_Init(void);
 void MX_I2C2_Init(void);
+void MX_TIM3_Init(void);
 void MX_TIM2_Init(void);
 void MX_ADC1_Init(void);
 void MX_SPI1_Init(void);
+void MX_SPI2_Init(void);
+
+extern void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim);
 
 int main(void)
 {
@@ -36,13 +43,16 @@ int main(void)
 	MX_USART1_UART_Init();
 	// MX_I2C1_Init();
 	// MX_I2C2_Init();
+	MX_TIM3_Init();
 	// MX_TIM2_Init();
 	// MX_SPI1_Init();
+	MX_SPI2_Init();
 
 	kernel_startup();
 
 	led_task();
-	// controller_task();
+	// bmi160_task();
+	controller_task();
 	// nrf2401_task();
 	// ms5611_task();
 
@@ -201,6 +211,32 @@ void MX_SPI1_Init(void)
 }
 
 /**
+ * @brief SPI2 Initialization Function
+ * @param None
+ * @retval None
+ */
+void MX_SPI2_Init(void)
+{
+	/* SPI2 parameter configuration*/
+	hspi2.Instance = SPI2;
+	hspi2.Init.Mode = SPI_MODE_MASTER;
+	hspi2.Init.Direction = SPI_DIRECTION_2LINES;
+	hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
+	hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
+	hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
+	hspi2.Init.NSS = SPI_NSS_SOFT;
+	hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+	hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
+	hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
+	hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+	hspi2.Init.CRCPolynomial = 10;
+	if (HAL_SPI_Init(&hspi2) != HAL_OK)
+	{
+		Error_Handler();
+	}
+}
+
+/**
  * @brief TIM2 Initialization Function
  * @param None
  * @retval None
@@ -246,6 +282,7 @@ void MX_TIM2_Init(void)
 	{
 		Error_Handler();
 	}
+
 	HAL_TIM_MspPostInit(&htim2);
 
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
@@ -257,6 +294,67 @@ void MX_TIM2_Init(void)
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, 0);
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, 0);
+}
+
+/**
+ * @brief TIM3 Initialization Function
+ * @param None
+ * @retval None
+ */
+void MX_TIM3_Init(void)
+{
+	TIM_ClockConfigTypeDef sClockSourceConfig = { 0 };
+	TIM_MasterConfigTypeDef sMasterConfig = { 0 };
+
+	htim3.Instance = TIM3;
+	htim3.Init.Prescaler = 71; // 设置预分频值
+	htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+	htim3.Init.Period = 65535; // 设置计数器周期
+	htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+	{
+		while (1)
+			;
+	}
+
+	sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+	if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+	{
+		while (1)
+			;
+	}
+
+	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+	if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+	{
+		while (1)
+			;
+	}
+
+	HAL_NVIC_SetPriority(TIM3_IRQn, 1, 1); // 设置定时器中断的优先级
+	HAL_NVIC_EnableIRQ(TIM3_IRQn); // 使能定时器中断
+
+	// 启动定时器
+	HAL_TIM_Base_Start_IT(&htim3);
+}
+
+void TIM3_IRQHandler(void)
+{
+	HAL_TIM_IRQHandler(&htim3);
+}
+
+uint64_t get_count(void)
+{
+	return htim3.Instance->CNT + TimerCnt * 0xffff;
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
+{
+	if (htim == &htim3)
+	{
+		TimerCnt++;
+	}
 }
 
 /**
@@ -294,10 +392,8 @@ void MX_GPIO_Init(void)
 	__HAL_RCC_GPIOA_CLK_ENABLE();
 	__HAL_RCC_GPIOB_CLK_ENABLE();
 
-	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1, GPIO_PIN_RESET);
-
-	/*Configure GPIO pin Output Level */
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11 | GPIO_PIN_12, GPIO_PIN_SET); // SPI2 CS默认高电平
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_12, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_15, GPIO_PIN_RESET);
 
 	/*Configure GPIO pins : PB0 PB1 */
@@ -307,10 +403,17 @@ void MX_GPIO_Init(void)
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-	/*Configure GPIO pin : PB12 */
-	GPIO_InitStruct.Pin = GPIO_PIN_12;
+	/*Configure GPIO pin : PB10 */
+	GPIO_InitStruct.Pin = GPIO_PIN_10;
 	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING; // GPIO_MODE_IT_RISING;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	/*Configure GPIO pin : PB12 PB12 */ // SPI2 CS_BMI160 CS_MS5611
+	GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 	/*Configure GPIO pins : PA11 PA12 PA15 */
@@ -327,7 +430,7 @@ void MX_GPIO_Init(void)
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 	/* EXTI interrupt init*/
-	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 1);
+	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 2, 1);
 	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 }
 
@@ -340,7 +443,7 @@ void MX_GPIO_Init(void)
 
 PUTCHAR_PROTOTYPE
 {
-	HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, 0xFFFF); //阻塞方式打印
+	HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, 0xFFFF); // 阻塞方式打印
 	return ch;
 }
 
