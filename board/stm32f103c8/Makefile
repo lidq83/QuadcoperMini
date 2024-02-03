@@ -173,6 +173,7 @@ $(ELF_FILE):$(SRC) $(STARTUP_OBJ)
 install:
 	#@st-flash write $(BIN_FILE) 0x8000000
 	jlink -NoGui -commanderscript loadbin_cmd.jlink
+	#jlink -commanderscript loadbin_cmd.jlink
 
 clean:
 	@rm -rvf *.o *.bin *.code *.elf *.hex *.info

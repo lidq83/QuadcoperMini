@@ -14,41 +14,41 @@ extern int ctl_calibrate;
 
 void* led_pthread(void* arg)
 {
-	led_on(0);
+	led_off(0);
 	led_off(1);
 	led_off(2);
 
 	for (uint8_t i = 0;; i++)
 	{
-		if (ctl_arming)
+		//if (ctl_arming)
 		{
 			if ((led.led_val >> (i % 8)) & 0x1)
 			{
-				led_on(0);
+				led_on(2);
 			}
 			else
 			{
-				led_off(0);
+				led_off(2);
 			}
 		}
-		else
-		{
-			if (ctl_calibrate == 0)
-			{
-				led_blink(0);
-			}
-			else
-			{
-				if (i % 16 < 8)
-				{
-					led_on(0);
-				}
-				else
-				{
-					led_off(0);
-				}
-			}
-		}
+		// else
+		// {
+		// 	if (ctl_calibrate == 0)
+		// 	{
+		// 		led_blink(0);
+		// 	}
+		// 	else
+		// 	{
+		// 		if (i % 16 < 8)
+		// 		{
+		// 			led_on(0);
+		// 		}
+		// 		else
+		// 		{
+		// 			led_off(0);
+		// 		}
+		// 	}
+		// }
 
 		sleep_ticks(125);
 	}

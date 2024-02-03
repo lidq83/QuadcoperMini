@@ -254,186 +254,190 @@ void ctl_output(void)
 
 void* controller_pthread(void* arg)
 {
-	uint32_t value[8] = { 0 };
-	flash_read(FLASH_USER_DEF, value, 8);
+	// uint32_t value[8] = { 0 };
+	// flash_read(FLASH_USER_DEF, value, 8);
 
-	if (value[0] != MAGIC_NUM)
+	// if (value[0] != MAGIC_NUM)
+	// {
+	// 	value[0] = MAGIC_NUM;
+
+	// 	offset_x = 0;
+	// 	offset_y = 0;
+	// 	offset_z = 0;
+	// 	offset_gx = 0;
+	// 	offset_gy = 0;
+	// 	offset_gz = 0;
+
+	// 	ctl_offset_save();
+	// }
+
+	// ctl_offset_load();
+
+	// sleep_ticks(20);
+
+	// mpu6050_setup();
+
+	// float sx = 0;
+	// float sy = 0;
+	// float sz = 0;
+
+	// uint32_t tk = 0;
+
+	// while (tk++ < 20)
+	// {
+	// 	mpu6050_value(&mpu_value[0], &mpu_value[1], &mpu_value[2], &mpu_value[3], &mpu_value[4], &mpu_value[5], &mpu_value[6], &mpu_value[7], &mpu_value[8]);
+	// 	sx += mpu_value[0];
+	// 	sy += mpu_value[1];
+	// 	sz += mpu_value[2];
+	// 	sleep_ticks(5);
+	// }
+
+	// if (sx == 0 && sy == 0 && sz == 0)
+	// {
+	// 	printf("Init mpu6050 error, reset mpu.\n");
+	// 	HAL_NVIC_SystemReset();
+	// 	while (1)
+	// 	{
+	// 	}
+	// }
+	// printf("Init mpu6050 OK.\n");
+
+	// while (1)
+	// {
+	// 	if (ctl_sw[12] == 1)
+	// 	{
+	// 		if (ctl_arming == 0)
+	// 		{
+	// 			ctl_arming = 1;
+	// 			ctl_calibrate = 0;
+	// 		}
+	// 	}
+	// 	else
+	// 	{
+	// 		ctl_arming = 0;
+	// 	}
+
+	// 	if (ctl_sw[13] == 1)
+	// 	{
+	// 		ctl_angle_p = 2.5f;
+	// 	}
+	// 	else
+	// 	{
+	// 		ctl_angle_p = 1.5f;
+	// 	}
+
+	// 	// 读取姿态信息
+	// 	if (mpu6050_value(&mpu_value[0], &mpu_value[1], &mpu_value[2], &mpu_value[3], &mpu_value[4], &mpu_value[5], &mpu_value[6], &mpu_value[7], &mpu_value[8]) == 0)
+	// 	{
+	// 		for (int i = 0; i < 9; i++)
+	// 		{
+	// 			xyz_value[i] = mpu_value[i] * xyz_value_filter[i] + xyz_value_pre[i] * (1.0 - xyz_value_filter[i]);
+	// 			xyz_value_pre[i] = xyz_value[i];
+	// 		}
+	// 	}
+
+	// 	float x = xyz_value[0];
+	// 	float y = xyz_value[1];
+	// 	float z = xyz_value[2];
+
+	// 	float gx = xyz_value[3];
+	// 	float gy = xyz_value[4];
+	// 	float gz = xyz_value[5];
+
+	// 	float ax = xyz_value[6];
+	// 	float ay = xyz_value[7];
+	// 	float az = xyz_value[8];
+
+	// 	float t_x = offset_x + x;
+	// 	float t_y = offset_y + y;
+	// 	float t_z = offset_z + z;
+
+	// 	float t_gx = offset_gx + gx;
+	// 	float t_gy = offset_gy + gy;
+	// 	float t_gz = offset_gz + gz;
+
+	// 	float t_ax = offset_ax + ax;
+	// 	float t_ay = offset_ay + ay;
+	// 	float t_az = offset_az + az;
+
+	// 	// 已解锁
+	// 	if (ctl_arming)
+	// 	{
+	// 		// 角速度期望转为航向角速期望
+	// 		yaw_expect_total += ctl_yaw * yaw_expect_rate;
+
+	// 		// [外环PID控制
+	// 		// 根据角度期望计算角度误差
+	// 		float devi_pitch_angle = (-ctl_pitch) * (ctl_angle * ctl_angle_p) - t_x;
+	// 		float devi_roll_angle = (-ctl_roll) * (ctl_angle * ctl_angle_p) - t_y;
+	// 		float devi_yaw_angle = yaw_expect_total - t_z;
+	// 		// PID得到角速度期望
+	// 		float ctl_pitch_angle = ctl_pid(devi_pitch_angle, devi_pitch_angle_pre, ctl_param_pitch_roll_angle_p, 0, 0, NULL, 0);
+	// 		float ctl_roll_angle = ctl_pid(devi_roll_angle, devi_roll_angle_pre, ctl_param_pitch_roll_angle_p, 0, 0, NULL, 0);
+	// 		float ctl_yaw_angle = ctl_pid(devi_yaw_angle, devi_yaw_angle_pre, ctl_param_yaw_angle_p, 0, 0, NULL, 0);
+	// 		// 外环PID控制]
+
+	// 		// [内环PID控制
+	// 		// 根据角速度期望计算角度误差
+	// 		float devi_pitch_rate = ctl_pitch_angle - t_gx;
+	// 		float devi_roll_rate = ctl_roll_angle - t_gy;
+	// 		float devi_yaw_rate = ctl_yaw_angle - t_gz;
+	// 		// PID得到控制量
+	// 		float ctl_pitch_rate = ctl_pid(devi_pitch_rate, devi_pitch_rate_pre, ctl_param_pitch_roll_rate_p, ctl_param_pitch_roll_rate_i, ctl_param_pitch_roll_rate_d, &ctl_integral_rate_pitch, ctl_thro);
+	// 		float ctl_roll_rate = ctl_pid(devi_roll_rate, devi_roll_rate_pre, ctl_param_pitch_roll_rate_p, ctl_param_pitch_roll_rate_i, ctl_param_pitch_roll_rate_d, &ctl_integral_rate_roll, ctl_thro);
+	// 		float ctl_yaw_rate = ctl_pid(devi_yaw_rate, devi_yaw_rate_pre, ctl_param_yaw_rate_p, ctl_param_yaw_rate_i, ctl_param_yaw_rate_d, &ctl_integral_rate_yaw, ctl_thro);
+	// 		// 内环PID控制]
+
+	// 		// [更新误差项
+	// 		devi_pitch_angle_pre = devi_pitch_angle;
+	// 		devi_roll_angle_pre = devi_roll_angle;
+	// 		devi_yaw_angle_pre = devi_yaw_angle;
+
+	// 		devi_pitch_rate_pre = devi_pitch_rate;
+	// 		devi_roll_rate_pre = devi_roll_rate;
+	// 		devi_yaw_rate_pre = devi_yaw_rate;
+	// 		// 更新误差项]
+
+	// 		//混控
+	// 		ctl_mixer(ctl_thro, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
+	// 	}
+	// 	// 未解锁
+	// 	else
+	// 	{
+	// 		// 未校准时校准按钮被按下
+	// 		if (ctl_sw[10] == 1 && ctl_calibrate == 0)
+	// 		{
+	// 			// 开始校准
+	// 			ctl_calibrate = 1;
+	// 		}
+
+	// 		// 校准
+	// 		if (ctl_calibrate >= 1)
+	// 		{
+	// 			ctl_offset(-x, -y, -z, -gx, -gy, -gz, -ax, -ay, -az);
+	// 			ctl_calibrate++;
+	// 		}
+	// 		if (ctl_calibrate > 1000)
+	// 		{
+	// 			ctl_calibrate = 0;
+
+	// 			ctl_offset_save();
+	// 		}
+	// 		if (ctl_calibrate == 0)
+	// 		{
+	// 			ctl_offset_z(-z, -gz, -az);
+	// 		}
+	// 		ctl_lock_zero();
+	// 		ctl_mixer(0, 0, 0, 0, ctl_motor);
+	// 	}
+
+	// 	ctl_output();
+
+	// 	tk++;
+	// 	sleep_ticks(10);
+	// }
+	while(1)
 	{
-		value[0] = MAGIC_NUM;
-
-		offset_x = 0;
-		offset_y = 0;
-		offset_z = 0;
-		offset_gx = 0;
-		offset_gy = 0;
-		offset_gz = 0;
-
-		ctl_offset_save();
-	}
-
-	ctl_offset_load();
-
-	sleep_ticks(20);
-
-	mpu6050_setup();
-
-	float sx = 0;
-	float sy = 0;
-	float sz = 0;
-
-	uint32_t tk = 0;
-
-	while (tk++ < 20)
-	{
-		mpu6050_value(&mpu_value[0], &mpu_value[1], &mpu_value[2], &mpu_value[3], &mpu_value[4], &mpu_value[5], &mpu_value[6], &mpu_value[7], &mpu_value[8]);
-		sx += mpu_value[0];
-		sy += mpu_value[1];
-		sz += mpu_value[2];
-		sleep_ticks(5);
-	}
-
-	if (sx == 0 && sy == 0 && sz == 0)
-	{
-		printf("Init mpu6050 error, reset mpu.\n");
-		HAL_NVIC_SystemReset();
-		while (1)
-		{
-		}
-	}
-	printf("Init mpu6050 OK.\n");
-
-	while (1)
-	{
-		if (ctl_sw[12] == 1)
-		{
-			if (ctl_arming == 0)
-			{
-				ctl_arming = 1;
-				ctl_calibrate = 0;
-			}
-		}
-		else
-		{
-			ctl_arming = 0;
-		}
-
-		if (ctl_sw[13] == 1)
-		{
-			ctl_angle_p = 2.5f;
-		}
-		else
-		{
-			ctl_angle_p = 1.5f;
-		}
-
-		// 读取姿态信息
-		if (mpu6050_value(&mpu_value[0], &mpu_value[1], &mpu_value[2], &mpu_value[3], &mpu_value[4], &mpu_value[5], &mpu_value[6], &mpu_value[7], &mpu_value[8]) == 0)
-		{
-			for (int i = 0; i < 9; i++)
-			{
-				xyz_value[i] = mpu_value[i] * xyz_value_filter[i] + xyz_value_pre[i] * (1.0 - xyz_value_filter[i]);
-				xyz_value_pre[i] = xyz_value[i];
-			}
-		}
-
-		float x = xyz_value[0];
-		float y = xyz_value[1];
-		float z = xyz_value[2];
-
-		float gx = xyz_value[3];
-		float gy = xyz_value[4];
-		float gz = xyz_value[5];
-
-		float ax = xyz_value[6];
-		float ay = xyz_value[7];
-		float az = xyz_value[8];
-
-		float t_x = offset_x + x;
-		float t_y = offset_y + y;
-		float t_z = offset_z + z;
-
-		float t_gx = offset_gx + gx;
-		float t_gy = offset_gy + gy;
-		float t_gz = offset_gz + gz;
-
-		float t_ax = offset_ax + ax;
-		float t_ay = offset_ay + ay;
-		float t_az = offset_az + az;
-
-		// 已解锁
-		if (ctl_arming)
-		{
-			// 角速度期望转为航向角速期望
-			yaw_expect_total += ctl_yaw * yaw_expect_rate;
-
-			// [外环PID控制
-			// 根据角度期望计算角度误差
-			float devi_pitch_angle = (-ctl_pitch) * (ctl_angle * ctl_angle_p) - t_x;
-			float devi_roll_angle = (-ctl_roll) * (ctl_angle * ctl_angle_p) - t_y;
-			float devi_yaw_angle = yaw_expect_total - t_z;
-			// PID得到角速度期望
-			float ctl_pitch_angle = ctl_pid(devi_pitch_angle, devi_pitch_angle_pre, ctl_param_pitch_roll_angle_p, 0, 0, NULL, 0);
-			float ctl_roll_angle = ctl_pid(devi_roll_angle, devi_roll_angle_pre, ctl_param_pitch_roll_angle_p, 0, 0, NULL, 0);
-			float ctl_yaw_angle = ctl_pid(devi_yaw_angle, devi_yaw_angle_pre, ctl_param_yaw_angle_p, 0, 0, NULL, 0);
-			// 外环PID控制]
-
-			// [内环PID控制
-			// 根据角速度期望计算角度误差
-			float devi_pitch_rate = ctl_pitch_angle - t_gx;
-			float devi_roll_rate = ctl_roll_angle - t_gy;
-			float devi_yaw_rate = ctl_yaw_angle - t_gz;
-			// PID得到控制量
-			float ctl_pitch_rate = ctl_pid(devi_pitch_rate, devi_pitch_rate_pre, ctl_param_pitch_roll_rate_p, ctl_param_pitch_roll_rate_i, ctl_param_pitch_roll_rate_d, &ctl_integral_rate_pitch, ctl_thro);
-			float ctl_roll_rate = ctl_pid(devi_roll_rate, devi_roll_rate_pre, ctl_param_pitch_roll_rate_p, ctl_param_pitch_roll_rate_i, ctl_param_pitch_roll_rate_d, &ctl_integral_rate_roll, ctl_thro);
-			float ctl_yaw_rate = ctl_pid(devi_yaw_rate, devi_yaw_rate_pre, ctl_param_yaw_rate_p, ctl_param_yaw_rate_i, ctl_param_yaw_rate_d, &ctl_integral_rate_yaw, ctl_thro);
-			// 内环PID控制]
-
-			// [更新误差项
-			devi_pitch_angle_pre = devi_pitch_angle;
-			devi_roll_angle_pre = devi_roll_angle;
-			devi_yaw_angle_pre = devi_yaw_angle;
-
-			devi_pitch_rate_pre = devi_pitch_rate;
-			devi_roll_rate_pre = devi_roll_rate;
-			devi_yaw_rate_pre = devi_yaw_rate;
-			// 更新误差项]
-
-			//混控
-			ctl_mixer(ctl_thro, ctl_pitch_rate, ctl_roll_rate, ctl_yaw_rate, ctl_motor);
-		}
-		// 未解锁
-		else
-		{
-			// 未校准时校准按钮被按下
-			if (ctl_sw[10] == 1 && ctl_calibrate == 0)
-			{
-				// 开始校准
-				ctl_calibrate = 1;
-			}
-
-			// 校准
-			if (ctl_calibrate >= 1)
-			{
-				ctl_offset(-x, -y, -z, -gx, -gy, -gz, -ax, -ay, -az);
-				ctl_calibrate++;
-			}
-			if (ctl_calibrate > 1000)
-			{
-				ctl_calibrate = 0;
-
-				ctl_offset_save();
-			}
-			if (ctl_calibrate == 0)
-			{
-				ctl_offset_z(-z, -gz, -az);
-			}
-			ctl_lock_zero();
-			ctl_mixer(0, 0, 0, 0, ctl_motor);
-		}
-
-		ctl_output();
-
-		tk++;
 		sleep_ticks(10);
 	}
 	return NULL;
