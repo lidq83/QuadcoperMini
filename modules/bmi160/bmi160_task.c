@@ -509,12 +509,12 @@ void* bmi160_pthread(void* arg)
 {
 _restart:
 
-	msleep(200);
+	msleep(100);
 	printf("BMI160 init\n");
 
 	init_bmi160_sensor_driver_interface();
 
-	msleep(200);
+	msleep(100);
 
 	int ret = init_bmi160();
 	if (ret != 0)
@@ -542,6 +542,17 @@ _restart:
 
 		bmi160_get_sensor_data((BMI160_ACCEL_SEL | BMI160_GYRO_SEL), &bmi160_accel, &bmi160_gyro, &bmi160dev);
 
+		// if (tk % 10 == 0)
+		// {
+		// 	printf("acc %d %d %d gyro %d %d %d\n", //
+		// 		   bmi160_accel.x,
+		// 		   bmi160_accel.y,
+		// 		   bmi160_accel.z,
+		// 		   bmi160_gyro.x,
+		// 		   bmi160_gyro.y,
+		// 		   bmi160_gyro.z);
+		// }
+
 		// 转为弧度制
 		rate[0] = (bmi160_gyro.x / 32768.0 * 2000.0) * M_PI / 180.0;
 		rate[1] = (bmi160_gyro.y / 32768.0 * 2000.0) * M_PI / 180.0;
@@ -566,14 +577,10 @@ _restart:
 
 		if (tk % 10 == 0)
 		{
-			printf("[%d] angle %+8.6f %+8.6f %+8.6f gyro_bias %+8.6f %+8.6f %+8.6f\n", //
-				   tk,
-				   angle[0],
-				   angle[1],
-				   angle[2],
-				   _gyro_bias.x,
-				   _gyro_bias.y,
-				   _gyro_bias.z);
+			printf("angle %4d %4d %4d\n", //
+				   (int)(angle[0] * 10),
+				   (int)(angle[1] * 10),
+				   (int)(angle[2] * 10));
 		}
 
 		tk++;

@@ -217,7 +217,6 @@ void MX_SPI1_Init(void)
  */
 void MX_SPI2_Init(void)
 {
-	/* SPI2 parameter configuration*/
 	hspi2.Instance = SPI2;
 	hspi2.Init.Mode = SPI_MODE_MASTER;
 	hspi2.Init.Direction = SPI_DIRECTION_2LINES;
@@ -225,7 +224,7 @@ void MX_SPI2_Init(void)
 	hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
 	hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
 	hspi2.Init.NSS = SPI_NSS_SOFT;
-	hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+	hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
 	hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
 	hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
 	hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -385,53 +384,78 @@ void MX_USART1_UART_Init(void)
  */
 void MX_GPIO_Init(void)
 {
+	/* GPIO Ports Clock Enable */
+	__HAL_RCC_GPIOD_CLK_ENABLE();
+	__HAL_RCC_GPIOB_CLK_ENABLE();
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+
 	GPIO_InitTypeDef GPIO_InitStruct = { 0 };
 
-	/* GPIO Ports Clock Enable */
-	// __HAL_RCC_GPIOD_CLK_ENABLE();
-	__HAL_RCC_GPIOA_CLK_ENABLE();
-	__HAL_RCC_GPIOB_CLK_ENABLE();
+	/*Configure GPIO pin Output Level */
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11 | GPIO_PIN_12, GPIO_PIN_RESET);
 
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11 | GPIO_PIN_12, GPIO_PIN_SET); // SPI2 CS默认高电平
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_12, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_15, GPIO_PIN_RESET);
+	/*Configure GPIO pin Output Level */
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_RESET);
 
-	/*Configure GPIO pins : PB0 PB1 */
-	GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-	/*Configure GPIO pin : PB10 */
-	GPIO_InitStruct.Pin = GPIO_PIN_10;
-	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING; // GPIO_MODE_IT_RISING;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-	/*Configure GPIO pin : PB12 PB12 */ // SPI2 CS_BMI160 CS_MS5611
+	/*Configure GPIO pins : PB11 PB12 */
 	GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-	/*Configure GPIO pins : PA11 PA12 PA15 */
-	GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_15;
+	/*Configure GPIO pin : PA11 */
+	GPIO_InitStruct.Pin = GPIO_PIN_11;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-	/*Configure GPIO pins : PB8 PB9 */
-	GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9;
-	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+	// /* GPIO Ports Clock Enable */
+	// // __HAL_RCC_GPIOD_CLK_ENABLE();
+	// __HAL_RCC_GPIOA_CLK_ENABLE();
+	// __HAL_RCC_GPIOB_CLK_ENABLE();
 
-	/* EXTI interrupt init*/
-	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 2, 1);
-	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+	// HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11 | GPIO_PIN_12, GPIO_PIN_SET); // SPI2 CS默认高电平
+	// HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_12, GPIO_PIN_RESET);
+	// HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_15, GPIO_PIN_RESET);
+
+	// /*Configure GPIO pins : PB0 PB1 */
+	// GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1;
+	// GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	// GPIO_InitStruct.Pull = GPIO_NOPULL;
+	// GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	// HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	// /*Configure GPIO pin : PB10 */
+	// GPIO_InitStruct.Pin = GPIO_PIN_10;
+	// GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING; // GPIO_MODE_IT_RISING;
+	// GPIO_InitStruct.Pull = GPIO_NOPULL;
+	// HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	// /*Configure GPIO pin : PB12 PB12 */ // SPI2 CS_BMI160 CS_MS5611
+	// GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12;
+	// GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	// GPIO_InitStruct.Pull = GPIO_PULLUP;
+	// GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	// HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	// /*Configure GPIO pins : PA11 PA12 PA15 */
+	// GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_15;
+	// GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	// GPIO_InitStruct.Pull = GPIO_NOPULL;
+	// GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	// HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	// /*Configure GPIO pins : PB8 PB9 */
+	// GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9;
+	// GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	// GPIO_InitStruct.Pull = GPIO_NOPULL;
+	// HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	// /* EXTI interrupt init*/
+	// HAL_NVIC_SetPriority(EXTI15_10_IRQn, 2, 1);
+	// HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 }
 
 #include "stdio.h"
