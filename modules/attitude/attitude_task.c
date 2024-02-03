@@ -7,6 +7,7 @@
 
 #include <attitude_task.h>
 #include <bmi160.h>
+#include <hmc5883.h>
 #include <main.h>
 #include <math.h>
 #include <ms5611.h>
@@ -519,12 +520,19 @@ _restart:
 	{
 		goto _restart;
 	}
-	printf("BMI160 ok\n");
+	printf("BMI160 init ok\n");
 
 	Barometer_init();
 	msleep(100);
 	Barometer_setOSR(OSR_256);
 	msleep(100);
+	printf("MS5611 init ok\n");
+
+	HMC5883L_setRange(HMC5883L_RANGE_8_1GA);
+	HMC5883L_setMeasurementMode(HMC5883L_CONTINOUS);
+	HMC5883L_setDataRate(HMC5883L_DATARATE_75HZ);
+	HMC5883L_setSamples(HMC5883L_SAMPLES_8);
+	printf("HMC5883 init ok\n");
 
 	uint32_t tk = 0;
 
@@ -546,6 +554,8 @@ _restart:
 		bmi160_get_sensor_data((BMI160_ACCEL_SEL | BMI160_GYRO_SEL), &bmi160_accel, &bmi160_gyro, &bmi160dev);
 
 		float altitude = Barometer_getAltitude(true);
+
+		Vector mag = HMC5883L_readData();
 
 		// if (tk % 10 == 0)
 		// {
@@ -582,11 +592,14 @@ _restart:
 
 		if (tk % 10 == 0)
 		{
-			printf("angle %4d %4d %4d altitude %d\n", //
+			printf("angle %4d %4d %4d alt %d mag %4d %4d %4d\n", //
 				   (int)(angle[0] * 10),
 				   (int)(angle[1] * 10),
 				   (int)(angle[2] * 10),
-				   (int)(altitude * 1000));
+				   (int)(altitude * 1000),
+				   (int)(mag.XAxis * 10),
+				   (int)(mag.YAxis * 10),
+				   (int)(mag.ZAxis * 10));
 		}
 
 		tk++;

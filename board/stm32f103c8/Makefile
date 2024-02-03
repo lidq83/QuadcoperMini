@@ -57,6 +57,7 @@ CFLAGS		+=	-I$(DRVS)/led
 CFLAGS		+=	-I$(DRVS)/flash
 CFLAGS		+=	-I$(DRVS)/bmi160
 CFLAGS		+=	-I$(DRVS)/ms5611
+CFLAGS		+=	-I$(DRVS)/hmc5883
 CFLAGS		+=	-I$(DRVS)/nrf2401
 
 #------------------------------------------------------------------------#
@@ -83,6 +84,7 @@ SRC			+=	$(DRVS)/led/led.c \
 				$(DRVS)/flash/flash.c \
 				$(DRVS)/bmi160/bmi160.c \
 				$(DRVS)/ms5611/ms5611.c \
+				$(DRVS)/hmc5883/hmc5883.c \
 				$(DRVS)/nrf2401/nrf2401.c
 
 #------------------------------------------------------------------------#

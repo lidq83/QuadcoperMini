@@ -40,8 +40,7 @@ int main(void)
 
 	MX_GPIO_Init();
 	MX_USART1_UART_Init();
-	// MX_I2C1_Init();
-	// MX_I2C2_Init();
+	MX_I2C1_Init();
 	MX_TIM3_Init();
 	// MX_TIM2_Init();
 	// MX_SPI1_Init();
@@ -53,7 +52,6 @@ int main(void)
 	attitude_task();
 	// controller_task();
 	// nrf2401_task();
-	// ms5611_task();
 
 	_kernel_startup = 1;
 
