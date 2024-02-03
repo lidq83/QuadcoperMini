@@ -10,12 +10,8 @@
 #define PCB_CTL_PRIO (0)
 #define PCB_CTL_SIZE (1200)
 
-#define PCB_BMI160_PRIO (1)
-#define PCB_BMI160_SIZE (800)
-
-//气压计
-#define PCB_MS5611_PRIO (2)
-#define PCB_MS5611_SIZE (800)
+#define PCB_ATTITUDE_PRIO (1)
+#define PCB_ATTITUDE_SIZE (800)
 
 //遥控信号
 #define PCB_NRF_PRIO (3)

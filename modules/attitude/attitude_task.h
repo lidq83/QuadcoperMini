@@ -4,13 +4,13 @@
  *  Created on: December 23, 2019
  *      Author: lidq
  */
-#ifndef __SRC_BMI160_TASK_H
-#define __SRC_BMI160_TASK_H
+#ifndef __SRC_ATTITUDE_TASK_H
+#define __SRC_ATTITUDE_TASK_H
 
 #include <board.h>
 #include <sche.h>
 #include <sem.h>
 
-void bmi160_task(void);
+void attitude_task(void);
 
 #endif

@@ -65,8 +65,7 @@ MODULES		=	$(ROOTPATH)/modules
 CFLAGS		+=	-I$(MODULES)
 CFLAGS		+=	-I$(MODULES)/led
 CFLAGS		+=	-I$(MODULES)/controller
-CFLAGS		+=	-I$(MODULES)/bmi160
-CFLAGS		+=	-I$(MODULES)/ms5611
+CFLAGS		+=	-I$(MODULES)/attitude
 CFLAGS		+=	-I$(MODULES)/nrf2401
 
 #------------------------------------------------------------------------#
@@ -90,8 +89,7 @@ SRC			+=	$(DRVS)/led/led.c \
 # Modules
 SRC			+=	$(MODULES)/led/led_task.c \
 				$(MODULES)/controller/controller_task.c \
-				$(MODULES)/bmi160/bmi160_task.c \
-				$(MODULES)/ms5611/ms5611_task.c \
+				$(MODULES)/attitude/attitude_task.c \
 				$(MODULES)/nrf2401/nrf2401_task.c
 
 #------------------------------------------------------------------------#

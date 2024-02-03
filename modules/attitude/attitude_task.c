@@ -5,10 +5,11 @@
  *      Author: lidq
  */
 
+#include <attitude_task.h>
 #include <bmi160.h>
-#include <bmi160_task.h>
 #include <main.h>
 #include <math.h>
+#include <ms5611.h>
 #include <stdio.h>
 
 extern TIM_HandleTypeDef htim1;
@@ -505,23 +506,25 @@ static void init_bmi160_sensor_driver_interface(void)
 #endif
 }
 
-void* bmi160_pthread(void* arg)
+void* attitude_pthread(void* arg)
 {
 _restart:
 
 	msleep(100);
 	printf("BMI160 init\n");
-
 	init_bmi160_sensor_driver_interface();
-
 	msleep(100);
-
 	int ret = init_bmi160();
 	if (ret != 0)
 	{
 		goto _restart;
 	}
 	printf("BMI160 ok\n");
+
+	Barometer_init();
+	msleep(100);
+	Barometer_setOSR(OSR_256);
+	msleep(100);
 
 	uint32_t tk = 0;
 
@@ -541,6 +544,8 @@ _restart:
 		timepre = timestamp;
 
 		bmi160_get_sensor_data((BMI160_ACCEL_SEL | BMI160_GYRO_SEL), &bmi160_accel, &bmi160_gyro, &bmi160dev);
+
+		float altitude = Barometer_getAltitude(true);
 
 		// if (tk % 10 == 0)
 		// {
@@ -577,10 +582,11 @@ _restart:
 
 		if (tk % 10 == 0)
 		{
-			printf("angle %4d %4d %4d\n", //
+			printf("angle %4d %4d %4d altitude %d\n", //
 				   (int)(angle[0] * 10),
 				   (int)(angle[1] * 10),
-				   (int)(angle[2] * 10));
+				   (int)(angle[2] * 10),
+				   (int)(altitude * 1000));
 		}
 
 		tk++;
@@ -590,7 +596,7 @@ _restart:
 	return NULL;
 }
 
-void bmi160_task(void)
+void attitude_task(void)
 {
-	pcb_create(PCB_BMI160_PRIO, &bmi160_pthread, NULL, PCB_BMI160_SIZE);
+	pcb_create(PCB_ATTITUDE_PRIO, &attitude_pthread, NULL, PCB_ATTITUDE_SIZE);
 }
