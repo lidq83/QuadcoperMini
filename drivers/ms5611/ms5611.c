@@ -81,10 +81,10 @@ static uint32_t ms5611_readRawPressure();
 static void ms5611_init()
 {
 	MS5611_DIS
-	msleep(10);
+	msleep(100);
 
 	ms5611_write(CMD_RESET);
-	msleep(10);
+	msleep(100);
 
 	prom[0] = ms5611_read16bits(CMD_PROM_C1);
 	prom[1] = ms5611_read16bits(CMD_PROM_C2);
@@ -135,10 +135,9 @@ static uint32_t ms5611_readRawTemp()
 	// Convert temp
 	ms5611_write(tempAddr);
 	// Conversion Time
-	//msleep(convDelay);
+	msleep(convDelay);
 	// Read ADC
 	D2 = ms5611_read24bits(0x00);
-
 	return D2;
 }
 
@@ -148,10 +147,9 @@ static uint32_t ms5611_readRawPressure()
 	// Convert pressure
 	ms5611_write(pressAddr);
 	// Conversion time
-	//msleep(convDelay);
+	msleep(convDelay);
 	// Read ADC
 	D1 = ms5611_read24bits(0x00);
-
 	return D1;
 }
 

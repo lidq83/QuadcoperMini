@@ -513,7 +513,6 @@ _restart:
 
 	printf("BMI160 init\n");
 	init_bmi160_sensor_driver_interface();
-	msleep(100);
 	int ret = init_bmi160();
 	if (ret != 0)
 	{
@@ -523,9 +522,7 @@ _restart:
 
 	msleep(100);
 	Barometer_init();
-	msleep(100);
 	Barometer_setOSR(OSR_256);
-	msleep(100);
 	printf("MS5611 init ok\n");
 
 	HMC5883L_setRange(HMC5883L_RANGE_8_1GA);
@@ -557,9 +554,9 @@ _restart:
 
 		bmi160_get_sensor_data((BMI160_ACCEL_SEL | BMI160_GYRO_SEL), &bmi160_accel, &bmi160_gyro, &bmi160dev);
 
-		// double altitude = Barometer_calculate();
-		//  alt_val = altitude * alt_f + alt_pre * (1.0 - alt_f);
-		//  alt_pre = alt_val;
+		double altitude = Barometer_calculate();
+		alt_val = altitude * alt_f + alt_pre * (1.0 - alt_f);
+		alt_pre = alt_val;
 
 		Vector mag = HMC5883L_readData();
 
