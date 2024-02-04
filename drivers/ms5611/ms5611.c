@@ -2,6 +2,9 @@
 #include <ms5611.h>
 #include <sche.h>
 
+#define SEA_LEVEL_PRESSURE 101325.0 // 海平面标准大气压力值（Pa）
+#define TEMPERATURE_CORRECTION 1.0 // 温度修正值
+
 // TODO : set a proper timing
 #define SPI_TIMEOUT 50 // in ms
 
@@ -217,38 +220,49 @@ float Barometer_getAltitude(bool calculate)
 	return altitude;
 }
 
-void Barometer_calculate()
+double Barometer_calculate()
 {
 	int32_t dT;
 	int64_t TEMP, OFF, SENS, P;
+	int64_t T2, OFF2, SENS2;
 	uint32_t D1, D2;
 	float press, r, c;
 
 	D1 = ms5611_readRawPressure();
 	D2 = ms5611_readRawTemp();
 
-	dT = D2 - ((long)prom[4] * 256);
-	TEMP = 2000 + ((int64_t)dT * prom[5]) / 8388608;
-	OFF = (int64_t)prom[1] * 65536 + ((int64_t)prom[3] * dT) / 128;
-	SENS = (int64_t)prom[0] * 32768 + ((int64_t)prom[2] * dT) / 256;
+	dT = D2 - ((int32_t)(prom[4]) << 8);
+	TEMP = 2000 + ((int32_t)(dT * (prom[5])) >> 23);
+	OFF = (((int64_t)(prom[1])) << 16) + (((prom[3]) * dT) >> 7);
+	SENS = (((int64_t)(prom[0])) << 15) + (((prom[2]) * dT) >> 8);
 
 	if (TEMP < 2000)
-	{ // second order temperature compensation
-		int64_t T2 = (((int64_t)dT) * dT) >> 31;
-		int64_t Aux_64 = (TEMP - 2000) * (TEMP - 2000);
-		int64_t OFF2 = (5 * Aux_64) >> 1;
-		int64_t SENS2 = (5 * Aux_64) >> 2;
-		TEMP = TEMP - T2;
-		OFF = OFF - OFF2;
-		SENS = SENS - SENS2;
+	{
+		// temperature < 20°C
+		T2 = (dT * dT) >> 31;
+		OFF2 = 5 * (TEMP - 2000) * (TEMP - 2000) / 2;
+		SENS2 = 5 * (TEMP - 2000) * (TEMP - 2000) / 4;
+
+		if (TEMP < -1500)
+		{
+			// temperature < -15°C
+			OFF2 = OFF2 + (7 * (TEMP + 1500) * (TEMP + 1500));
+			SENS2 = SENS2 + (11 * (TEMP + 1500) * (TEMP + 1500) / 2);
+		}
+	}
+	else
+	{
+		// temperature > 20°C
+		T2 = 0;
+		OFF2 = 0;
+		SENS2 = 0;
 	}
 
-	P = (D1 * SENS / 2097152 - OFF) / 32768;
-	temperature = TEMP;
-	pressure = P;
+	int64_t t_OFF = OFF - OFF2;
+	int64_t t_TEMP = TEMP - T2;
+	int64_t t_SENS = SENS - SENS2;
+	int64_t PRES = ((((int32_t)(D1)*t_SENS) >> 21) - t_OFF) >> 15;
 
-	press = (float)pressure;
-	r = press / 101325.0;
-	c = 1.0 / 5.255;
-	altitude = (1 - pow(r, c)) * 44330.77;
+	double altitude = (1 - pow(PRES / SEA_LEVEL_PRESSURE, 0.190284)) * TEMPERATURE_CORRECTION * 44330.7692;
+	return altitude;
 }

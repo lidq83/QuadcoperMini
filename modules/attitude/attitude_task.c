@@ -543,6 +543,10 @@ _restart:
 	double timepre = 0;
 	int init_angle_cnt = 100;
 
+	double alt_f = 0.1;
+	double alt_val = 0;
+	double alt_pre = 0;
+
 	while (1)
 	{
 		// 计算当前时间戳
@@ -553,7 +557,9 @@ _restart:
 
 		bmi160_get_sensor_data((BMI160_ACCEL_SEL | BMI160_GYRO_SEL), &bmi160_accel, &bmi160_gyro, &bmi160dev);
 
-		float altitude = Barometer_getAltitude(true);
+		double altitude = Barometer_calculate();
+		alt_val = altitude * alt_f + alt_pre * (1.0 - alt_f);
+		alt_pre = alt_val;
 
 		Vector mag = HMC5883L_readData();
 
@@ -596,7 +602,7 @@ _restart:
 				   (int)(angle[0] * 10),
 				   (int)(angle[1] * 10),
 				   (int)(angle[2] * 10),
-				   (int)(altitude * 1000),
+				   (int)(alt_val * 1000),
 				   (int)(mag.XAxis * 10),
 				   (int)(mag.YAxis * 10),
 				   (int)(mag.ZAxis * 10));

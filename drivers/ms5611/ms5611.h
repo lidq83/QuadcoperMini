@@ -76,6 +76,6 @@ float Barometer_getAltitude(bool calculate);
  * @brief calculate/update the altitude/pressure/temperature
  * 		  using the barometer
  */
-void Barometer_calculate();
+double Barometer_calculate();
 
 #endif /* BAROMETER_H_ */
