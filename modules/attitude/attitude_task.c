@@ -15,7 +15,7 @@
 
 extern TIM_HandleTypeDef htim1;
 
-#define MS (5)
+#define MS (4)
 #define CALI_CNT (300)
 
 #ifndef M_PI
@@ -41,6 +41,7 @@ static double ezInt = 0;
 static double angle[3] = { 0 };
 static double rate[3] = { 0 };
 static double acc[3] = { 0 };
+static double angle_offset[3] = { 0 };
 
 double acc_t[3] = { 0 };
 
@@ -562,7 +563,7 @@ _restart:
 
 		// if (tk % 10 == 0)
 		// {
-		// 	printf("acc %d %d %d gyro %d %d %d\n", //
+		// 	printf("acc %4d %4d %4d gyro %4d %4d %4d\n", //
 		// 		   bmi160_accel.x,
 		// 		   bmi160_accel.y,
 		// 		   bmi160_accel.z,
@@ -581,8 +582,15 @@ _restart:
 		acc[1] = bmi160_accel.y / 32768.0f * (ONE_G * 16.0);
 		acc[2] = bmi160_accel.z / 32768.0f * (ONE_G * 16.0);
 
+		// if (tk < 100)
+		// {
+		computeInitialAngle(acc[0], acc[1], acc[2], &angle_offset[0], &angle_offset[1], &angle_offset[2]);
+		// }
+		// else
+		// {
 		// 互补滤波
 		q_atti = complementaryFilter(dt, q_atti, acc[0], acc[1], acc[2], &rate[0], &rate[1], &rate[2]);
+		// }
 
 		// 姿态四元数转欧拉角
 		quaternionToEuler(q_atti, &angle[0], &angle[1], &angle[2]);
@@ -593,17 +601,21 @@ _restart:
 			angle[i] = angle[i] * 180.0 / M_PI;
 		}
 
-		if (tk % 10 == 0)
-		{
-			printf("angle %4d %4d %4d alt %d mag %4d %4d %4d\n", //
-				   (int)(angle[0] * 10),
-				   (int)(angle[1] * 10),
-				   (int)(angle[2] * 10),
-				   (int)(alt_val * 1000),
-				   (int)(mag.XAxis * 10),
-				   (int)(mag.YAxis * 10),
-				   (int)(mag.ZAxis * 10));
-		}
+		// if (tk % 10 == 0)
+		// {
+		// 	printf("tk %u angle[ %4d %4d %4d] %4d %4d %4d alt %d mag %4d %4d %4d\n", //
+		// 		   tk,
+		// 		   (int)(angle_offset[0] * 180 / M_PI * 10),
+		// 		   (int)(angle_offset[1] * 180 / M_PI * 10),
+		// 		   (int)(angle_offset[2] * 180 / M_PI * 10),
+		// 		   (int)(angle[0] * 10),
+		// 		   (int)(angle[1] * 10),
+		// 		   (int)(angle[2] * 10),
+		// 		   (int)(alt_val * 1000),
+		// 		   (int)(mag.XAxis * 10),
+		// 		   (int)(mag.YAxis * 10),
+		// 		   (int)(mag.ZAxis * 10));
+		// }
 
 		tk++;
 
