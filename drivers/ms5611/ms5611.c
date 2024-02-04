@@ -135,7 +135,7 @@ static uint32_t ms5611_readRawTemp()
 	// Convert temp
 	ms5611_write(tempAddr);
 	// Conversion Time
-	msleep(convDelay);
+	//msleep(convDelay);
 	// Read ADC
 	D2 = ms5611_read24bits(0x00);
 
@@ -148,7 +148,7 @@ static uint32_t ms5611_readRawPressure()
 	// Convert pressure
 	ms5611_write(pressAddr);
 	// Conversion time
-	msleep(convDelay);
+	//msleep(convDelay);
 	// Read ADC
 	D1 = ms5611_read24bits(0x00);
 

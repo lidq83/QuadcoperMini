@@ -511,7 +511,6 @@ void* attitude_pthread(void* arg)
 {
 _restart:
 
-	msleep(100);
 	printf("BMI160 init\n");
 	init_bmi160_sensor_driver_interface();
 	msleep(100);
@@ -522,6 +521,7 @@ _restart:
 	}
 	printf("BMI160 init ok\n");
 
+	msleep(100);
 	Barometer_init();
 	msleep(100);
 	Barometer_setOSR(OSR_256);
@@ -557,9 +557,9 @@ _restart:
 
 		bmi160_get_sensor_data((BMI160_ACCEL_SEL | BMI160_GYRO_SEL), &bmi160_accel, &bmi160_gyro, &bmi160dev);
 
-		double altitude = Barometer_calculate();
-		alt_val = altitude * alt_f + alt_pre * (1.0 - alt_f);
-		alt_pre = alt_val;
+		// double altitude = Barometer_calculate();
+		//  alt_val = altitude * alt_f + alt_pre * (1.0 - alt_f);
+		//  alt_pre = alt_val;
 
 		Vector mag = HMC5883L_readData();
 
