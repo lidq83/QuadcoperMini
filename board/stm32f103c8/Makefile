@@ -13,7 +13,7 @@ CODE_FILE	=	dolphin-os.code
 
 #------------------------------------------------------------------------#
 # Cross Compiler
-CC_PRE		=	/data/app/local/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi
+CC_PRE		=	arm-none-eabi
 
 CC			=	$(CC_PRE)-gcc
 OBJCOPY		=	$(CC_PRE)-objcopy
