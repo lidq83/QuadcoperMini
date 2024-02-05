@@ -508,6 +508,22 @@ static void init_bmi160_sensor_driver_interface(void)
 #endif
 }
 
+void calculateRealAcceleration(double accel_raw[3], double accel_offset[3], double accel_T[3][3], double accel_real[3])
+{
+	// Subtract offset
+	double accel_corrected[3];
+	for (int i = 0; i < 3; i++)
+	{
+		accel_corrected[i] = accel_raw[i] - accel_offset[i];
+	}
+
+	// Apply scaling and cross-axis compensation
+	for (int i = 0; i < 3; i++)
+	{
+		accel_real[i] = accel_T[i][0] * accel_corrected[0] + accel_T[i][1] * accel_corrected[1] + accel_T[i][2] * accel_corrected[2];
+	}
+}
+
 void* attitude_pthread(void* arg)
 {
 _restart:
@@ -545,6 +561,17 @@ _restart:
 	double alt_val = 0;
 	double alt_pre = 0;
 
+	///
+	double accel_offset[3] = { -1.653500 - 0.449500 - 0.311000 };
+	double accel_T[3][3] = {
+		{ 1.000163, -0.006901, -0.064262 },
+		{ -0.019924, 1.002784, 0.005600 },
+		{ -0.007842, -0.006224, 0.983009 }
+	};
+	///
+
+	double accel_corr[3] = { 0 };
+
 	while (1)
 	{
 		// 计算当前时间戳
@@ -563,7 +590,7 @@ _restart:
 
 		// if (tk % 10 == 0)
 		// {
-		// 	printf("acc %4d %4d %4d gyro %4d %4d %4d\n", //
+		// 	printf("acc %d %d %d gyro %d %d %d\n", //
 		// 		   bmi160_accel.x,
 		// 		   bmi160_accel.y,
 		// 		   bmi160_accel.z,
@@ -582,15 +609,19 @@ _restart:
 		acc[1] = bmi160_accel.y / 32768.0f * (ONE_G * 16.0);
 		acc[2] = bmi160_accel.z / 32768.0f * (ONE_G * 16.0);
 
-		// if (tk < 100)
+		calculateRealAcceleration(acc, accel_offset, accel_T, accel_corr);
+
+		// if (tk % 10 == 0)
 		// {
-		computeInitialAngle(acc[0], acc[1], acc[2], &angle_offset[0], &angle_offset[1], &angle_offset[2]);
+		// 	printf("acc %d %d %d\n", //
+		// 		   (int)(accel_corr[0] * 1000.0),
+		// 		   (int)(accel_corr[1] * 1000.0),
+		// 		   (int)(accel_corr[2] * 1000.0));
 		// }
-		// else
-		// {
+
+
 		// 互补滤波
-		q_atti = complementaryFilter(dt, q_atti, acc[0], acc[1], acc[2], &rate[0], &rate[1], &rate[2]);
-		// }
+		q_atti = complementaryFilter(dt, q_atti, accel_corr[0], accel_corr[1], accel_corr[2], &rate[0], &rate[1], &rate[2]);
 
 		// 姿态四元数转欧拉角
 		quaternionToEuler(q_atti, &angle[0], &angle[1], &angle[2]);
@@ -601,21 +632,24 @@ _restart:
 			angle[i] = angle[i] * 180.0 / M_PI;
 		}
 
-		// if (tk % 10 == 0)
-		// {
-		// 	printf("tk %u angle[ %4d %4d %4d] %4d %4d %4d alt %d mag %4d %4d %4d\n", //
-		// 		   tk,
-		// 		   (int)(angle_offset[0] * 180 / M_PI * 10),
-		// 		   (int)(angle_offset[1] * 180 / M_PI * 10),
-		// 		   (int)(angle_offset[2] * 180 / M_PI * 10),
-		// 		   (int)(angle[0] * 10),
-		// 		   (int)(angle[1] * 10),
-		// 		   (int)(angle[2] * 10),
-		// 		   (int)(alt_val * 1000),
-		// 		   (int)(mag.XAxis * 10),
-		// 		   (int)(mag.YAxis * 10),
-		// 		   (int)(mag.ZAxis * 10));
-		// }
+		if (tk % 10 == 0)
+		{
+			// printf("tk %u angle %4d %4d %4d\n", //
+			// 	   tk,
+			// 	   (int)(angle[0] * 10),
+			// 	   (int)(angle[1] * 10),
+			// 	   (int)(angle[2] * 10));
+
+			printf("tk %u angle %4d %4d %4d alt %d mag %4d %4d %4d\n", //
+				   tk,
+				   (int)(angle[0] * 10),
+				   (int)(angle[1] * 10),
+				   (int)(angle[2] * 10),
+				   (int)(alt_val * 1000),
+				   (int)(mag.XAxis * 10),
+				   (int)(mag.YAxis * 10),
+				   (int)(mag.ZAxis * 10));
+		}
 
 		tk++;
 
