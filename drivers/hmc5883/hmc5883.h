@@ -62,9 +62,9 @@ typedef enum
 
 typedef struct
 {
-	float XAxis;
-	float YAxis;
-	float ZAxis;
+	double XAxis;
+	double YAxis;
+	double ZAxis;
 } Vector;
 
 Vector HMC5883L_readRaw(void);

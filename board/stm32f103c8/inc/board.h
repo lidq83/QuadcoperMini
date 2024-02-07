@@ -11,7 +11,7 @@
 #define PCB_CTL_SIZE (1200)
 
 #define PCB_ATTITUDE_PRIO (1)
-#define PCB_ATTITUDE_SIZE (800)
+#define PCB_ATTITUDE_SIZE (1200)
 
 //遥控信号
 #define PCB_NRF_PRIO (3)

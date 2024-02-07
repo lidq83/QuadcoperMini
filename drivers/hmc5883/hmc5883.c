@@ -1,7 +1,7 @@
 
 #include <hmc5883.h>
 
-static float mgPerDigit = 0.73f;
+static double mgPerDigit = 0.73f;
 static Vector v = { 0 };
 
 extern I2C_HandleTypeDef hi2c1;
@@ -17,9 +17,9 @@ Vector HMC5883L_readRaw(void)
 
 Vector HMC5883L_readNormalize(void)
 {
-	v.XAxis = (float)HMC5883L_readRegister16(HMC5883L_REG_OUT_X_M) * mgPerDigit;
-	v.ZAxis = (float)HMC5883L_readRegister16(HMC5883L_REG_OUT_Z_M) * mgPerDigit;
-	v.YAxis = (float)HMC5883L_readRegister16(HMC5883L_REG_OUT_Y_M) * mgPerDigit;
+	v.XAxis = (double)HMC5883L_readRegister16(HMC5883L_REG_OUT_X_M) * mgPerDigit;
+	v.ZAxis = (double)HMC5883L_readRegister16(HMC5883L_REG_OUT_Z_M) * mgPerDigit;
+	v.YAxis = (double)HMC5883L_readRegister16(HMC5883L_REG_OUT_Y_M) * mgPerDigit;
 
 	return v;
 }

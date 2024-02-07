@@ -190,12 +190,12 @@ Quaternion convertToQuaternion(double roll, double pitch, double yaw)
 	Quaternion q;
 
 	// 计算对应的三角函数值
-	float cosRoll = cos(roll);
-	float sinRoll = sin(roll);
-	float cosPitch = cos(pitch);
-	float sinPitch = sin(pitch);
-	float cosYaw = cos(yaw);
-	float sinYaw = sin(yaw);
+	double cosRoll = cos(roll);
+	double sinRoll = sin(roll);
+	double cosPitch = cos(pitch);
+	double sinPitch = sin(pitch);
+	double cosYaw = cos(yaw);
+	double sinYaw = sin(yaw);
 
 	// 计算欧拉角转换为四元数的公式
 	q.w = cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw;
@@ -210,7 +210,7 @@ Quaternion convertToQuaternion(double roll, double pitch, double yaw)
 void computeInitialAngle(double ax, double ay, double az, double* x, double* y, double* z)
 {
 	// 计算归一化的加速度向量长度
-	float norm = sqrt(ax * ax + ay * ay + az * az);
+	double norm = sqrt(ax * ax + ay * ay + az * az);
 
 	// 检查除零情况
 	if (norm != 0.0f)
@@ -234,6 +234,29 @@ void computeInitialAngle(double ax, double ay, double az, double* x, double* y, 
 	}
 }
 
+// 将机体坐标系下的磁力计数据转换为大地坐标系下的数据
+Vector3f convertToEarthFrame(Quaternion q, Vector3f mag_body)
+{
+	// 将磁力计数据转换为四元数表示
+	Quaternion mag_quat;
+	mag_quat.w = 0.0f;
+	mag_quat.x = mag_body.x;
+	mag_quat.y = mag_body.y;
+	mag_quat.z = mag_body.z;
+
+	// 四元数旋转变换
+	Quaternion q_conjugate = { q.w, -q.x, -q.y, -q.z };
+	Quaternion mag_earth = quaternionMultiply(quaternionMultiply(q, mag_quat), q_conjugate);
+
+	// 提取转换后的磁力计数据
+	Vector3f mag_earth_frame;
+	mag_earth_frame.x = mag_earth.x;
+	mag_earth_frame.y = mag_earth.y;
+	mag_earth_frame.z = mag_earth.z;
+
+	return mag_earth_frame;
+}
+
 void limit_value(double* value, double min, double max)
 {
 	if (*value < min)
@@ -247,11 +270,40 @@ void limit_value(double* value, double min, double max)
 }
 
 // 使用加速计补偿角速度
-Quaternion complementaryFilter(double dt, Quaternion q, double ax, double ay, double az, double* g_x, double* g_y, double* g_z)
+Quaternion complementaryFilter(double dt, Quaternion q, double ax, double ay, double az, double* g_x, double* g_y, double* g_z, double mx, double my, double mz)
 {
 	normalizeQuaternion(&q);
 
-	Vector3f _corr = { 0 };
+	Vector3f _corr = { 0, 0, 0 };
+
+	double m_norm = sqrt(mx * mx + my * my + mz * mz); // mag数据归一化
+	mx = mx / m_norm;
+	my = my / m_norm;
+	mz = mz / m_norm;
+
+	double hx, hy, hz, bx, bz;
+	double wx, wy, wz;
+
+	double q0q0 = q.w * q.w;
+	double q0q1 = q.w * q.x;
+	double q0q2 = q.w * q.y;
+	double q0q3 = q.w * q.z;
+	double q1q1 = q.x * q.x;
+	double q1q2 = q.x * q.y;
+	double q1q3 = q.x * q.z;
+	double q2q2 = q.y * q.y;
+	double q2q3 = q.y * q.z;
+	double q3q3 = q.z * q.z;
+
+	hx = 2 * mx * (0.5 - q2q2 - q3q3) + 2 * my * (q1q2 - q0q3) + 2 * mz * (q1q3 + q0q2);
+	hy = 2 * mx * (q1q2 + q0q3) + 2 * my * (0.5 - q1q1 - q3q3) + 2 * mz * (q2q3 - q0q1);
+	hz = 2 * mx * (q1q3 - q0q2) + 2 * my * (q2q3 + q0q1) + 2 * mz * (0.5 - q1q1 - q2q2);
+	bx = sqrt((hx * hx) + (hy * hy));
+	bz = hz;
+
+	wx = 2 * bx * (0.5 - q2q2 - q3q3) + 2 * bz * (q1q3 - q0q2);
+	wy = 2 * bx * (q1q2 - q0q3) + 2 * bz * (q0q1 + q2q3);
+	wz = 2 * bx * (q0q2 + q1q3) + 2 * bz * (0.5 - q1q1 - q2q2);
 
 	// 3轴加速度归一化
 	double norm = sqrt(ax * ax + ay * ay + az * az);
@@ -269,9 +321,9 @@ Quaternion complementaryFilter(double dt, Quaternion q, double ax, double ay, do
 		double vz = q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z;
 
 		// 计算测得的重力与计算得重力间的误差，这个误差是通过微量外积（叉乘）求出
-		double ex = (ay * vz - az * vy);
-		double ey = (az * vx - ax * vz);
-		double ez = (ax * vy - ay * vx);
+		double ex = (ay * vz - az * vy); //+ (my * wz - mz * wy);
+		double ey = (az * vx - ax * vz); //+ (mz * wx - mx * wz);
+		double ez = (ax * vy - ay * vx) + (mx * wy - my * wx);
 
 		// 对误差进行积分
 		exInt += ex * Ki;
@@ -281,7 +333,7 @@ Quaternion complementaryFilter(double dt, Quaternion q, double ax, double ay, do
 		// 将误差进行PI（比例和积分）补偿到陀螺仪角速度
 		_corr.x = Kp * ex + exInt;
 		_corr.y = Kp * ey + eyInt;
-		_corr.z = Kp * ez + ezInt; // 需要通过磁罗盘来补偿偏航角，如果没有磁罗盘则无法补偿
+		_corr.z = Kp * ey + eyInt; // 需要通过磁罗盘来补偿偏航角，如果没有磁罗盘则无法补偿
 	}
 
 	double gx = *g_x;
@@ -524,6 +576,135 @@ void calculateRealAcceleration(double accel_raw[3], double accel_offset[3], doub
 	}
 }
 
+
+void calibrate_magnetometer(double* real, double* raw, double* offset, double* scale)
+{
+	// Apply offset correction
+	double calibrated[3];
+	calibrated[0] = raw[0] - offset[0];
+	calibrated[1] = raw[1] - offset[1];
+	calibrated[2] = raw[2] - offset[2];
+
+	// Apply scale correction
+	real[0] = calibrated[0] / scale[0];
+	real[1] = calibrated[1] / scale[1];
+	real[2] = calibrated[2] / scale[2];
+}
+
+double convert_to_0_2PI(double heading)
+{
+	if (heading < 0)
+	{
+		heading += 2 * M_PI; // 将负角度转换为正角度
+	}
+
+	if (heading >= 2 * M_PI)
+	{
+		heading -= 2 * M_PI; // 将大于等于360度的角度转换为0到360度范围内
+	}
+
+	return heading;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+#define Kp 10.0f // proportional gain governs rate of convergence to accelerometer/magnetometer
+#define Ki 0.08f // integral gain governs rate of convergence of gyroscope biases
+#define halfT 0.002f // half the sample period采样周期的一半
+
+double q0 = 1, q1 = 0, q2 = 0, q3 = 0; // quaternion elements representing the estimated orientation
+double angle_x = 0, angle_y = 0, angle_z = 0;
+void IMUupdate(double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz)
+{
+	double norm;
+	double hx, hy, hz, bx, bz;
+	double wx, wy, wz;
+	double vx, vy, vz;
+	double ex, ey, ez;
+
+	// 先把这些用得到的值算好
+	double q0q0 = q0 * q0;
+	double q0q1 = q0 * q1;
+	double q0q2 = q0 * q2;
+	double q0q3 = q0 * q3;
+	double q1q1 = q1 * q1;
+	double q1q2 = q1 * q2;
+	double q1q3 = q1 * q3;
+	double q2q2 = q2 * q2;
+	double q2q3 = q2 * q3;
+	double q3q3 = q3 * q3;
+
+	if (ax * ay * az == 0)
+		return;
+
+	if (mx * my * mz == 0)
+		return;
+
+	norm = sqrt(ax * ax + ay * ay + az * az); // acc数据归一化
+	ax = ax / norm;
+	ay = ay / norm;
+	az = az / norm;
+
+	norm = sqrt(mx * mx + my * my + mz * mz); // mag数据归一化
+	mx = mx / norm;
+	my = my / norm;
+	mz = mz / norm;
+
+	//  mx = 0;
+	//  my = 0;
+	//  mz = 0;
+
+	hx = 2 * mx * (0.5 - q2q2 - q3q3) + 2 * my * (q1q2 - q0q3) + 2 * mz * (q1q3 + q0q2);
+	hy = 2 * mx * (q1q2 + q0q3) + 2 * my * (0.5 - q1q1 - q3q3) + 2 * mz * (q2q3 - q0q1);
+	hz = 2 * mx * (q1q3 - q0q2) + 2 * my * (q2q3 + q0q1) + 2 * mz * (0.5 - q1q1 - q2q2);
+	bx = sqrt((hx * hx) + (hy * hy));
+	bz = hz;
+
+	// estimated direction of gravity and flux (v and w)              估计重力方向和流量/变迁
+	vx = 2 * (q1q3 - q0q2); // 四元素中xyz的表示
+	vy = 2 * (q0q1 + q2q3);
+	vz = q0q0 - q1q1 - q2q2 + q3q3;
+
+	wx = 2 * bx * (0.5 - q2q2 - q3q3) + 2 * bz * (q1q3 - q0q2);
+	wy = 2 * bx * (q1q2 - q0q3) + 2 * bz * (q0q1 + q2q3);
+	wz = 2 * bx * (q0q2 + q1q3) + 2 * bz * (0.5 - q1q1 - q2q2);
+
+	// error is sum of cross product between reference direction of fields and direction measured by sensors
+	//  ex = (ay*vz - az*vy) ;                                               //向量外积在相减得到差分就是误差
+	//  ey = (az*vx - ax*vz) ;
+	//  ez = (ax*vy - ay*vx) ;
+
+	ex = (ay * vz - az * vy) + (my * wz - mz * wy);
+	ey = (az * vx - ax * vz) + (mz * wx - mx * wz);
+	ez = (ax * vy - ay * vx) + (mx * wy - my * wx);
+
+	exInt = exInt + ex * Ki; // 对误差进行积分
+	eyInt = eyInt + ey * Ki;
+	ezInt = ezInt + ez * Ki;
+
+	// adjusted gyroscope measurements
+	gx = gx + Kp * ex + exInt; // 将误差PI后补偿到陀螺仪，即补偿零点漂移
+	gy = gy + Kp * ey + eyInt;
+	gz = gz + Kp * ez + ezInt; // 这里的gz由于没有观测者进行矫正会产生漂移，表现出来的就是积分自增或自减
+
+	// integrate quaternion rate and normalise                           //四元素的微分方程
+	q0 = q0 + (-q1 * gx - q2 * gy - q3 * gz) * halfT;
+	q1 = q1 + (q0 * gx + q2 * gz - q3 * gy) * halfT;
+	q2 = q2 + (q0 * gy - q1 * gz + q3 * gx) * halfT;
+	q3 = q3 + (q0 * gz + q1 * gy - q2 * gx) * halfT;
+
+	// normalise quaternion
+	norm = sqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+	q0 = q0 / norm;
+	q1 = q1 / norm;
+	q2 = q2 / norm;
+	q3 = q3 / norm;
+
+	angle_x = atan2(2 * q1 * q2 + 2 * q0 * q3, -2 * q2 * q2 - 2 * q3 * q3 + 1) * 57.3; // yaw
+	angle_y = asin(-2 * q1 * q3 + 2 * q0 * q2) * 57.3; // pitch
+	angle_z = atan2(2 * q2 * q3 + 2 * q0 * q1, -2 * q1 * q1 - 2 * q2 * q2 + 1) * 57.3; // roll
+}
+
 void* attitude_pthread(void* arg)
 {
 _restart:
@@ -538,9 +719,9 @@ _restart:
 	printf("BMI160 init ok\n");
 
 	msleep(100);
-	Barometer_init();
-	Barometer_setOSR(OSR_256);
-	printf("MS5611 init ok\n");
+	// Barometer_init();
+	// Barometer_setOSR(OSR_256);
+	// printf("MS5611 init ok\n");
 
 	HMC5883L_setRange(HMC5883L_RANGE_8_1GA);
 	HMC5883L_setMeasurementMode(HMC5883L_CONTINOUS);
@@ -572,6 +753,12 @@ _restart:
 
 	double accel_corr[3] = { 0 };
 
+	// double mag_offset[3] = { -431.640802, 593.399220, 307.195002 };
+	// double mag_scale[3] = { 861.335705, 851.019437, 618.087718 };
+	double mag_offset[3] = { 0, 0, 0 };
+	double mag_scale[3] = { 1, 1, 1 };
+	double mag_raw[3] = { 0 };
+	double mag_real[3] = { 0 };
 	while (1)
 	{
 		// 计算当前时间戳
@@ -582,22 +769,20 @@ _restart:
 
 		bmi160_get_sensor_data((BMI160_ACCEL_SEL | BMI160_GYRO_SEL), &bmi160_accel, &bmi160_gyro, &bmi160dev);
 
-		double altitude = Barometer_calculate();
-		alt_val = altitude * alt_f + alt_pre * (1.0 - alt_f);
-		alt_pre = alt_val;
+		// double altitude = 0;//Barometer_calculate();
+		// alt_val = altitude * alt_f + alt_pre * (1.0 - alt_f);
+		// alt_pre = alt_val;
 
 		Vector mag = HMC5883L_readData();
-
-		// if (tk % 10 == 0)
-		// {
-		// 	printf("acc %d %d %d gyro %d %d %d\n", //
-		// 		   bmi160_accel.x,
-		// 		   bmi160_accel.y,
-		// 		   bmi160_accel.z,
-		// 		   bmi160_gyro.x,
-		// 		   bmi160_gyro.y,
-		// 		   bmi160_gyro.z);
-		// }
+		mag_raw[0] = mag.XAxis;
+		mag_raw[1] = mag.YAxis;
+		mag_raw[2] = mag.ZAxis;
+		calibrate_magnetometer(mag_real, mag_raw, mag_offset, mag_scale);
+		// Vector3f mag_body = { mag_real[0], mag_real[1], mag_real[2] };
+		// Vector3f mag_ned = convertToEarthFrame(q_atti, mag_body);
+		// // 计算航向角
+		// double heading = atan2(mag_real[1], mag_real[0]);
+		// heading = convert_to_0_2PI(heading);
 
 		// 转为弧度制
 		rate[0] = (bmi160_gyro.x / 32768.0 * 2000.0) * M_PI / 180.0;
@@ -619,36 +804,35 @@ _restart:
 		// 		   (int)(accel_corr[2] * 1000.0));
 		// }
 
-
 		// 互补滤波
-		q_atti = complementaryFilter(dt, q_atti, accel_corr[0], accel_corr[1], accel_corr[2], &rate[0], &rate[1], &rate[2]);
+		// q_atti = complementaryFilter(dt, q_atti, accel_corr[0], accel_corr[1], accel_corr[2], &rate[0], &rate[1], &rate[2], mag_real[0], mag_real[1], mag_real[2]);
 
 		// 姿态四元数转欧拉角
-		quaternionToEuler(q_atti, &angle[0], &angle[1], &angle[2]);
+		// quaternionToEuler(q_atti, &angle[0], &angle[1], &angle[2]);
+
+		IMUupdate(rate[0], rate[1], rate[2], accel_corr[0], accel_corr[1], accel_corr[2], mag_real[0], mag_real[1], mag_real[2]);
 
 		// 转角度制
-		for (int i = 0; i < 3; i++)
-		{
-			angle[i] = angle[i] * 180.0 / M_PI;
-		}
+		// for (int i = 0; i < 3; i++)
+		// {
+		// 	angle[i] = angle[i] * 180.0 / M_PI;
+		// }
 
 		if (tk % 10 == 0)
 		{
-			// printf("tk %u angle %4d %4d %4d\n", //
+			printf("angle %4d %4d %4d\n", //
+				   (int)(angle_x * 10),
+				   (int)(angle_y * 10),
+				   (int)(angle_z * 10));
+
+			// printf("tk %u angle %4d %4d %4d mag %4d %4d %4d\n", //
 			// 	   tk,
 			// 	   (int)(angle[0] * 10),
 			// 	   (int)(angle[1] * 10),
-			// 	   (int)(angle[2] * 10));
-
-			printf("tk %u angle %4d %4d %4d alt %d mag %4d %4d %4d\n", //
-				   tk,
-				   (int)(angle[0] * 10),
-				   (int)(angle[1] * 10),
-				   (int)(angle[2] * 10),
-				   (int)(alt_val * 1000),
-				   (int)(mag.XAxis * 10),
-				   (int)(mag.YAxis * 10),
-				   (int)(mag.ZAxis * 10));
+			// 	   (int)(angle[2] * 10),
+			// 	   (int)(mag_real[0] * 1000),
+			// 	   (int)(mag_real[1] * 1000),
+			// 	   (int)(mag_real[2] * 1000));
 		}
 
 		tk++;
