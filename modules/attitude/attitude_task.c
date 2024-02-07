@@ -608,8 +608,8 @@ double convert_to_0_2PI(double heading)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-#define Kp 10.0f // proportional gain governs rate of convergence to accelerometer/magnetometer
-#define Ki 0.08f // integral gain governs rate of convergence of gyroscope biases
+#define Kp 25.0f // proportional gain governs rate of convergence to accelerometer/magnetometer
+#define Ki 1.2f // integral gain governs rate of convergence of gyroscope biases
 #define halfT 0.002f // half the sample period采样周期的一半
 
 double q0 = 1, q1 = 0, q2 = 0, q3 = 0; // quaternion elements representing the estimated orientation
