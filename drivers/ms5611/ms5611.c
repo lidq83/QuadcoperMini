@@ -47,7 +47,7 @@ static uint32_t convDelay = CONVERSION_OSR_256;
 
 static int32_t temperature;
 static int32_t pressure;
-static float altitude;
+static double altitude;
 
 /**
  * @brief init the pressure sensor with default parameters
@@ -209,7 +209,7 @@ int32_t Barometer_getPressure(bool calculate)
 	return pressure;
 }
 
-float Barometer_getAltitude(bool calculate)
+double Barometer_getAltitude(bool calculate)
 {
 	if (calculate)
 	{
@@ -224,7 +224,7 @@ double Barometer_calculate()
 	int64_t TEMP, OFF, SENS, P;
 	int64_t T2, OFF2, SENS2;
 	uint32_t D1, D2;
-	float press, r, c;
+	double press, r, c;
 
 	D1 = ms5611_readRawPressure();
 	D2 = ms5611_readRawTemp();

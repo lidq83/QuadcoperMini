@@ -15,7 +15,7 @@
 
 extern TIM_HandleTypeDef htim1;
 
-#define MS (4)
+#define MS (3)
 #define CALI_CNT (300)
 
 #ifndef M_PI
@@ -708,7 +708,7 @@ void IMUupdate(double gx, double gy, double gz, double ax, double ay, double az,
 void* attitude_pthread(void* arg)
 {
 _restart:
-
+	msleep(100);
 	printf("BMI160 init\n");
 	init_bmi160_sensor_driver_interface();
 	int ret = init_bmi160();
@@ -719,9 +719,9 @@ _restart:
 	printf("BMI160 init ok\n");
 
 	msleep(100);
-	// Barometer_init();
-	// Barometer_setOSR(OSR_256);
-	// printf("MS5611 init ok\n");
+	Barometer_init();
+	Barometer_setOSR(OSR_256);
+	printf("MS5611 init ok\n");
 
 	HMC5883L_setRange(HMC5883L_RANGE_8_1GA);
 	HMC5883L_setMeasurementMode(HMC5883L_CONTINOUS);
@@ -738,7 +738,7 @@ _restart:
 	double timepre = 0;
 	int init_angle_cnt = 100;
 
-	double alt_f = 0.1;
+	double alt_f = 0.03;
 	double alt_val = 0;
 	double alt_pre = 0;
 
@@ -769,19 +769,31 @@ _restart:
 
 		bmi160_get_sensor_data((BMI160_ACCEL_SEL | BMI160_GYRO_SEL), &bmi160_accel, &bmi160_gyro, &bmi160dev);
 
-		// double altitude = 0;//Barometer_calculate();
-		// alt_val = altitude * alt_f + alt_pre * (1.0 - alt_f);
-		// alt_pre = alt_val;
+		double altitude = Barometer_calculate();
+		alt_val = altitude * alt_f + alt_pre * (1.0 - alt_f);
+		alt_pre = alt_val;
+
+		// if (tk % 10 == 0)
+		// {
+		// 	printf("acc %d %d %d g %d %d %d alt %d\n", //
+		// 		   (int)(accel_corr[0] * 1000.0),
+		// 		   (int)(accel_corr[1] * 1000.0),
+		// 		   (int)(accel_corr[2] * 1000.0),
+		// 		   (int)(bmi160_gyro.x),
+		// 		   (int)(bmi160_gyro.y),
+		// 		   (int)(bmi160_gyro.z),
+		// 		   (int)(alt_val * 1000.0));
+		// }
 
 		Vector mag = HMC5883L_readData();
 		mag_raw[0] = mag.XAxis;
 		mag_raw[1] = mag.YAxis;
 		mag_raw[2] = mag.ZAxis;
 		calibrate_magnetometer(mag_real, mag_raw, mag_offset, mag_scale);
-		// Vector3f mag_body = { mag_real[0], mag_real[1], mag_real[2] };
-		// Vector3f mag_ned = convertToEarthFrame(q_atti, mag_body);
-		// // 计算航向角
-		// double heading = atan2(mag_real[1], mag_real[0]);
+		//  Vector3f mag_body = { mag_real[0], mag_real[1], mag_real[2] };
+		//  Vector3f mag_ned = convertToEarthFrame(q_atti, mag_body);
+		//  // 计算航向角
+		double heading = atan2(mag_real[1], mag_real[0]);
 		// heading = convert_to_0_2PI(heading);
 
 		// 转为弧度制
@@ -795,14 +807,6 @@ _restart:
 		acc[2] = bmi160_accel.z / 32768.0f * (ONE_G * 16.0);
 
 		calculateRealAcceleration(acc, accel_offset, accel_T, accel_corr);
-
-		// if (tk % 10 == 0)
-		// {
-		// 	printf("acc %d %d %d\n", //
-		// 		   (int)(accel_corr[0] * 1000.0),
-		// 		   (int)(accel_corr[1] * 1000.0),
-		// 		   (int)(accel_corr[2] * 1000.0));
-		// }
 
 		// 互补滤波
 		// q_atti = complementaryFilter(dt, q_atti, accel_corr[0], accel_corr[1], accel_corr[2], &rate[0], &rate[1], &rate[2], mag_real[0], mag_real[1], mag_real[2]);
@@ -820,19 +824,21 @@ _restart:
 
 		if (tk % 10 == 0)
 		{
-			printf("angle %4d %4d %4d\n", //
+			printf("angle %4d %4d %4d alt %4d\n", //
 				   (int)(angle_x * 10),
 				   (int)(angle_y * 10),
-				   (int)(angle_z * 10));
+				   (int)(angle_z * 10),
+				   (int)(alt_val * 1000));
 
-			// printf("tk %u angle %4d %4d %4d mag %4d %4d %4d\n", //
+			// printf("tk %u angle %4d %4d %4d mag %4d %4d %4d heading %4d\n", //
 			// 	   tk,
 			// 	   (int)(angle[0] * 10),
 			// 	   (int)(angle[1] * 10),
 			// 	   (int)(angle[2] * 10),
 			// 	   (int)(mag_real[0] * 1000),
 			// 	   (int)(mag_real[1] * 1000),
-			// 	   (int)(mag_real[2] * 1000));
+			// 	   (int)(mag_real[2] * 1000),
+			// 	   (int)(heading * 10 * 180.0 / M_PI));
 		}
 
 		tk++;

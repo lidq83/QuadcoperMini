@@ -70,7 +70,7 @@ int32_t Barometer_getPressure(bool calculate);
  *
  * @return the altitude
  */
-float Barometer_getAltitude(bool calculate);
+double Barometer_getAltitude(bool calculate);
 
 /**
  * @brief calculate/update the altitude/pressure/temperature
