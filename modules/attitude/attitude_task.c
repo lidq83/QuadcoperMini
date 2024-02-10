@@ -15,7 +15,7 @@
 
 extern TIM_HandleTypeDef htim1;
 
-#define MS (3)
+#define MS (1)
 #define CALI_CNT (300)
 
 #ifndef M_PI
@@ -610,7 +610,7 @@ double convert_to_0_2PI(double heading)
 ////////////////////////////////////////////////////////////////////////////////
 #define Kp 25.0f // proportional gain governs rate of convergence to accelerometer/magnetometer
 #define Ki 1.2f // integral gain governs rate of convergence of gyroscope biases
-#define halfT 0.002f // half the sample period采样周期的一半
+#define halfT 0.0025f // half the sample period采样周期的一半
 
 double q0 = 1, q1 = 0, q2 = 0, q3 = 0; // quaternion elements representing the estimated orientation
 double angle_x = 0, angle_y = 0, angle_z = 0;
@@ -678,9 +678,9 @@ void IMUupdate(double gx, double gy, double gz, double ax, double ay, double az,
 	ey = (az * vx - ax * vz) + (mz * wx - mx * wz);
 	ez = (ax * vy - ay * vx) + (mx * wy - my * wx);
 
-	exInt = exInt + ex * Ki; // 对误差进行积分
-	eyInt = eyInt + ey * Ki;
-	ezInt = ezInt + ez * Ki;
+	exInt += ex * Ki; // 对误差进行积分
+	eyInt += ey * Ki;
+	ezInt += ez * Ki;
 
 	// adjusted gyroscope measurements
 	gx = gx + Kp * ex + exInt; // 将误差PI后补偿到陀螺仪，即补偿零点漂移
@@ -824,7 +824,8 @@ _restart:
 
 		if (tk % 10 == 0)
 		{
-			printf("angle %4d %4d %4d alt %4d\n", //
+			printf("dt %d angle %4d %4d %4d alt %4d\n", //
+				   (int)(dt * 10000),
 				   (int)(angle_x * 10),
 				   (int)(angle_y * 10),
 				   (int)(angle_z * 10),
