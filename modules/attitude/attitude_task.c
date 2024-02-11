@@ -326,6 +326,107 @@ void IMUupdate(Quaternion* q, Vector3f gyro, Vector3f accel, Vector3f mag)
 	angle.z = atan2(2 * q->x * q->y + 2 * q->w * q->z, -2 * q->y * q->y - 2 * q->z * q->z + 1) * 57.3; // yaw
 }
 
+Quaternion quaternionMultiply(Quaternion q1, Quaternion q2)
+{
+	Quaternion q;
+	// 执行四元数更新
+	q.w = q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z;
+	q.x = q1.w * q2.x + q1.x * q2.w + q1.y * q2.z - q1.z * q2.y;
+	q.y = q1.w * q2.y - q1.x * q2.z + q1.y * q2.w + q1.z * q2.x;
+	q.z = q1.w * q2.z + q1.x * q2.y - q1.y * q2.x + q1.z * q2.w;
+	return q;
+}
+
+Vector3f RotateVectorByQuaternion(Vector3f vector, Quaternion q)
+{
+	// 将磁力计数据转换为四元数表示
+	Quaternion quat;
+	quat.w = 0.0f;
+	quat.x = vector.x;
+	quat.y = vector.y;
+	quat.z = vector.z;
+
+	// 四元数旋转变换
+	Quaternion q_conjugate = { q.w, -q.x, -q.y, -q.z };
+	Quaternion ned = quaternionMultiply(quaternionMultiply(q, quat), q_conjugate);
+
+	// 提取转换后的磁力计数据
+	Vector3f ret;
+	ret.x = ned.x;
+	ret.y = ned.y;
+	ret.z = ned.z;
+	return ret;
+}
+
+#define Q_accel 0.03 // 加速计噪声协方差
+#define R_accel 0.5 // 加速计测量噪声协方差
+#define Q_altitude 0.1 // 气压计噪声协方差
+#define R_altitude 1.0 // 气压计测量噪声协方差
+
+// 系统状态向量
+typedef struct
+{
+	double height; // 高度
+	double velocity; // 垂直速度
+} StateVector;
+
+// 扩展卡尔曼滤波器更新步骤
+void EKFUpdate(StateVector* state, double dt, double accel, double alt)
+{
+	// 预测步骤
+	state->height += dt * state->velocity; // 更新高度估计
+	state->velocity += dt * accel; // 更新速度估计
+
+	// 计算预测误差协方差
+	double F[2][2] = { { 1, dt }, { 0, 1 } }; // 状态转移矩阵的导数
+	double P[2][2] = { { Q_altitude, 0 }, { 0, Q_altitude } }; // 估计误差协方差
+	double P_pred[2][2] = { { 0, 0 }, { 0, 0 } }; // 预测误差协方差
+	double P_pred_temp[2][2] = { { 0, 0 }, { 0, 0 } }; // 临时矩阵
+	double P_pred_transpose[2][2] = { { 0, 0 }, { 0, 0 } }; // 转置矩阵
+
+	// 计算预测误差协方差
+	for (int i = 0; i < 2; i++)
+	{
+		for (int j = 0; j < 2; j++)
+		{
+			for (int k = 0; k < 2; k++)
+			{
+				P_pred_temp[i][j] += F[i][k] * P[k][j];
+			}
+		}
+	}
+	for (int i = 0; i < 2; i++)
+	{
+		for (int j = 0; j < 2; j++)
+		{
+			for (int k = 0; k < 2; k++)
+			{
+				P_pred[i][j] += P_pred_temp[i][k] * F[j][k];
+			}
+		}
+	}
+
+	// 更新步骤
+	double H[2] = { 1, 0 }; // 测量矩阵
+	double K[2] = { 0, 0 }; // 卡尔曼增益
+	double S = H[0] * P_pred[0][0] * H[0] + R_accel; // 测量残差方差
+
+	// 计算卡尔曼增益
+	K[0] = P_pred[0][0] * H[0] / S;
+	K[1] = P_pred[1][0] * H[0] / S;
+
+	// 更新估计状态和误差协方差
+	double z = alt - state->height; // 测量残差
+	state->height += K[0] * z; // 更新高度估计
+	state->velocity += K[1] * z; // 更新垂直速度估计
+
+	P[0][0] -= K[0] * H[0] * P_pred[0][0];
+	P[0][1] -= K[0] * H[0] * P_pred[0][1];
+	P[1][0] -= K[0] * H[0] * P_pred[1][0];
+	P[1][1] -= K[0] * H[0] * P_pred[1][1];
+}
+
+
 void* attitude_pthread(void* arg)
 {
 _restart:
@@ -354,7 +455,7 @@ _restart:
 
 	double timepre = 0;
 
-	double alt_f = 0.05;
+	double alt_f = 0.1;
 	double alt_val = 0;
 	double alt_pre = 0;
 	///
@@ -375,10 +476,15 @@ _restart:
 
 	double altitude_offset = 0;
 	double altitude = 0;
+	double accel_z_offset = 0;
+	double accel_z = 0;
 
 	Vector3f gyro = { 0 };
 	Vector3f accel = { 0 };
 	Vector3f mag = { 0 };
+	Vector3f accel_ned = { 0 };
+
+	StateVector st = { 0, 0 };
 
 	while (1)
 	{
@@ -397,18 +503,22 @@ _restart:
 		if (tk < 500)
 		{
 			altitude_offset = 0;
+			accel_z_offset = 0;
 		}
 		else if (tk >= 500 && tk < 1000)
 		{
 			altitude_offset += alt_val;
+			accel_z_offset += accel_ned.z;
 		}
 		else if (tk == 1000)
 		{
 			altitude_offset /= 500;
+			accel_z_offset /= 500;
 		}
 		else
 		{
 			altitude = alt_val - altitude_offset;
+			accel_z = accel_ned.z - accel_z_offset;
 		}
 
 		Vector m = HMC5883L_readData();
@@ -439,24 +549,32 @@ _restart:
 
 		IMUupdate(&q_atti, gyro, accel, mag);
 
+		accel_ned = RotateVectorByQuaternion(accel, q_atti);
+
+		if (tk > 1000)
+		{
+			EKFUpdate(&st, dt, accel_z, altitude);
+		}
+
 		if (tk % 10 == 0)
 		{
-			printf("dt %d angle %4d %4d %4d alt %4d\n", //
-				   (int)(dt * 10000),
+			// printf("dt %d angle %4d %4d %4d accel_ned %4d %4d %4d\n", //
+			// 	   (int)(dt * 10000),
+			// 	   (int)(angle.x * 10),
+			// 	   (int)(angle.y * 10),
+			// 	   (int)(angle.z * 10),
+			// 	   (int)(accel_ned.x * 10),
+			// 	   (int)(accel_ned.y * 10),
+			// 	   (int)(accel_ned.z * 10));
+
+			printf("tk %u angle %4d %4d %4d ned_z %4d vel %4d height %4d\n", //
+				   tk,
 				   (int)(angle.x * 10),
 				   (int)(angle.y * 10),
 				   (int)(angle.z * 10),
-				   (int)(altitude * 1000));
-
-			// printf("tk %u angle %4d %4d %4d mag %4d %4d %4d heading %4d\n", //
-			// 	   tk,
-			// 	   (int)(angle[0] * 10),
-			// 	   (int)(angle[1] * 10),
-			// 	   (int)(angle[2] * 10),
-			// 	   (int)(mag_real[0] * 1000),
-			// 	   (int)(mag_real[1] * 1000),
-			// 	   (int)(mag_real[2] * 1000),
-			// 	   (int)(heading * 10 * 180.0 / M_PI));
+				   (int)(accel_z * 100),
+				   (int)(st.velocity * 1000),
+				   (int)(st.height * 1000));
 		}
 
 		tk++;

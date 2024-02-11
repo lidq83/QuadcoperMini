@@ -42,7 +42,7 @@
 #define M_PI (3.1415926535897932)
 #endif
 
-#define ONE_G (9.8)
+#define ONE_G (9.80665)
 
 typedef struct
 {
