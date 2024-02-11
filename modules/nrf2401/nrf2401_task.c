@@ -30,6 +30,8 @@ void ctl_switch(uint16_t ctl_sw_ch)
 	}
 }
 
+static uint32_t recv_cnt = 0;
+
 void* nrf2401_pthread(void* arg)
 {
 	protocol_init();
@@ -61,6 +63,7 @@ void* nrf2401_pthread(void* arg)
 		sem_wait(&sem_sig);
 		rx_len = NRF24L01_Read_Reg(R_RX_PL_WID); // 读取接收到的数据个数
 		NRF24L01_Read_Buf(RD_RX_PLOAD, rx_buff, rx_len); // 接收到数据
+		printf("rx_len %d recv_cnt %u\n", rx_len, recv_cnt);
 		if (rx_len > 0)
 		{
 			for (int i = 0; i < rx_len; i++)
@@ -71,10 +74,11 @@ void* nrf2401_pthread(void* arg)
 			protocol_append(rx_buff, rx_len);
 		}
 
+		rx_len = 0;
 		NRF24L01_Write_Reg(FLUSH_RX, 0xff); // 清除RX FIFO
 		NRF24L01_Clear_IRQ_Flag(IRQ_ALL);
 
-		RF24L01_Set_Mode(MODE_RX);
+		// RF24L01_Set_Mode(MODE_RX);
 		int ret = protocol_parse(ctl);
 		if (ret == 0)
 		{
@@ -161,7 +165,7 @@ void* nrf2401_protected_pthread(void* arg)
 		}
 
 		sem_post(&sem_sig);
-		msleep(100);
+		msleep(2000);
 	}
 	return NULL;
 }
@@ -174,6 +178,7 @@ void nrf2401_task(void)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+	recv_cnt++;
 	if (GPIO_Pin == GPIO_PIN_10)
 	{
 		sem_post(&sem_sig);

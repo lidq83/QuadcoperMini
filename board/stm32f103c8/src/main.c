@@ -49,8 +49,8 @@ int main(void)
 	kernel_startup();
 
 	led_task();
-	attitude_task();
-	controller_task();
+	// attitude_task();
+	// controller_task();
 	nrf2401_task();
 
 	_kernel_startup = 1;
@@ -221,7 +221,7 @@ void MX_SPI2_Init(void)
 	hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
 	hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
 	hspi2.Init.NSS = SPI_NSS_SOFT;
-	hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+	hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
 	hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
 	hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
 	hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -412,7 +412,7 @@ void MX_GPIO_Init(void)
 	/*Configure GPIO pin : PB10 */
 	GPIO_InitStruct.Pin = GPIO_PIN_10;
 	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING; // GPIO_MODE_IT_RISING;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 	// /*Configure GPIO pin : PB12 PB12 */ // SPI2 CS_BMI160 CS_MS5611
@@ -436,7 +436,7 @@ void MX_GPIO_Init(void)
 	// HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 	/* EXTI interrupt init*/
-	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 2, 1);
+	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 1);
 	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 }
 
