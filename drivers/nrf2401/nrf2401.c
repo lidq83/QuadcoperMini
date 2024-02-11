@@ -40,7 +40,7 @@ void spi_nrf_cs_low()
 
 uint8_t spi_nrf_irq_st()
 {
-	return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12);
+	return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_10);
 }
 
 uint8_t SPIx_ReadWriteByte(uint8_t value)

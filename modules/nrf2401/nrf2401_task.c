@@ -59,11 +59,15 @@ void* nrf2401_pthread(void* arg)
 	while (1)
 	{
 		sem_wait(&sem_sig);
-
 		rx_len = NRF24L01_Read_Reg(R_RX_PL_WID); // 读取接收到的数据个数
 		NRF24L01_Read_Buf(RD_RX_PLOAD, rx_buff, rx_len); // 接收到数据
 		if (rx_len > 0)
 		{
+			for (int i = 0; i < rx_len; i++)
+			{
+				printf("%02x ", rx_buff[i]);
+			}
+			printf("\n");
 			protocol_append(rx_buff, rx_len);
 		}
 
@@ -119,11 +123,11 @@ void* nrf2401_pthread(void* arg)
 
 			ctl_switch(ctl[9]);
 
-			// static uint32_t tk = 0;
-			// if (tk++ % 10 == 0)
-			// {
-			// 	printf("%d %d %d %d\n", (int)(ctl_thro * 1000), (int)(ctl_pitch * 1000), (int)(ctl_roll * 1000), (int)(ctl_yaw * 1000));
-			// }
+			static uint32_t tk = 0;
+			if (tk++ % 10 == 0)
+			{
+				printf("%d %d %d %d\n", (int)(ctl_thro * 1000), (int)(ctl_pitch * 1000), (int)(ctl_roll * 1000), (int)(ctl_yaw * 1000));
+			}
 		}
 		// msleep(1);
 	}
@@ -170,7 +174,7 @@ void nrf2401_task(void)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	if (GPIO_Pin == GPIO_PIN_12)
+	if (GPIO_Pin == GPIO_PIN_10)
 	{
 		sem_post(&sem_sig);
 	}

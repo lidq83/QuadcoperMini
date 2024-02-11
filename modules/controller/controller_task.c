@@ -9,10 +9,16 @@
 #include <main.h>
 #include <stdio.h>
 
+extern float ctl_thro;
+extern float ctl_pitch;
+extern float ctl_roll;
+extern float ctl_yaw;
+extern uint8_t ctl_sw[16];
+
 void* controller_pthread(void* arg)
 {
 	double timepre = 0;
-
+	uint32_t tk = 0;
 	while (1)
 	{
 		// 计算当前时间戳
@@ -21,9 +27,17 @@ void* controller_pthread(void* arg)
 		double dt = timestamp - timepre;
 		timepre = timestamp;
 
-		// printf("time=%d\n", (int)(timestamp));
+		// if (tk % 10 == 0)
+		// {
+		// 	printf("%04d %04d %04d %04d \n",
+		// 		   (int)(ctl_thro * 1000),
+		// 		   (int)(ctl_pitch * 1000),
+		// 		   (int)(ctl_roll * 1000),
+		// 		   (int)(ctl_yaw * 1000));
+		// }
 
-		msleep(100);
+		tk++;
+		msleep(10);
 	}
 	return NULL;
 }

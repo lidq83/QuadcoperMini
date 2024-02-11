@@ -556,26 +556,26 @@ _restart:
 			EKFUpdate(&st, dt, accel_z, altitude);
 		}
 
-		if (tk % 10 == 0)
-		{
-			// printf("dt %d angle %4d %4d %4d accel_ned %4d %4d %4d\n", //
-			// 	   (int)(dt * 10000),
-			// 	   (int)(angle.x * 10),
-			// 	   (int)(angle.y * 10),
-			// 	   (int)(angle.z * 10),
-			// 	   (int)(accel_ned.x * 10),
-			// 	   (int)(accel_ned.y * 10),
-			// 	   (int)(accel_ned.z * 10));
+		// if (tk % 10 == 0)
+		// {
+		// 	// printf("dt %d angle %4d %4d %4d accel_ned %4d %4d %4d\n", //
+		// 	// 	   (int)(dt * 10000),
+		// 	// 	   (int)(angle.x * 10),
+		// 	// 	   (int)(angle.y * 10),
+		// 	// 	   (int)(angle.z * 10),
+		// 	// 	   (int)(accel_ned.x * 10),
+		// 	// 	   (int)(accel_ned.y * 10),
+		// 	// 	   (int)(accel_ned.z * 10));
 
-			printf("tk %u angle %4d %4d %4d ned_z %4d vel %4d height %4d\n", //
-				   tk,
-				   (int)(angle.x * 10),
-				   (int)(angle.y * 10),
-				   (int)(angle.z * 10),
-				   (int)(accel_z * 100),
-				   (int)(st.velocity * 1000),
-				   (int)(st.height * 1000));
-		}
+		// 	printf("tk %u angle %4d %4d %4d ned_z %4d vel %4d height %4d\n", //
+		// 		   tk,
+		// 		   (int)(angle.x * 10),
+		// 		   (int)(angle.y * 10),
+		// 		   (int)(angle.z * 10),
+		// 		   (int)(accel_z * 100),
+		// 		   (int)(st.velocity * 1000),
+		// 		   (int)(st.height * 1000));
+		// }
 
 		tk++;
 
