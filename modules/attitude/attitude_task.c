@@ -635,10 +635,14 @@ void IMUupdate(double gx, double gy, double gz, double ax, double ay, double az,
 	double q3q3 = q3 * q3;
 
 	if (ax * ay * az == 0)
+	{
 		return;
+	}
 
 	if (mx * my * mz == 0)
+	{
 		return;
+	}
 
 	norm = sqrt(ax * ax + ay * ay + az * az); // acc数据归一化
 	ax = ax / norm;
@@ -649,10 +653,6 @@ void IMUupdate(double gx, double gy, double gz, double ax, double ay, double az,
 	mx = mx / norm;
 	my = my / norm;
 	mz = mz / norm;
-
-	//  mx = 0;
-	//  my = 0;
-	//  mz = 0;
 
 	hx = 2 * mx * (0.5 - q2q2 - q3q3) + 2 * my * (q1q2 - q0q3) + 2 * mz * (q1q3 + q0q2);
 	hy = 2 * mx * (q1q2 + q0q3) + 2 * my * (0.5 - q1q1 - q3q3) + 2 * mz * (q2q3 - q0q1);
@@ -668,11 +668,6 @@ void IMUupdate(double gx, double gy, double gz, double ax, double ay, double az,
 	wx = 2 * bx * (0.5 - q2q2 - q3q3) + 2 * bz * (q1q3 - q0q2);
 	wy = 2 * bx * (q1q2 - q0q3) + 2 * bz * (q0q1 + q2q3);
 	wz = 2 * bx * (q0q2 + q1q3) + 2 * bz * (0.5 - q1q1 - q2q2);
-
-	// error is sum of cross product between reference direction of fields and direction measured by sensors
-	//  ex = (ay*vz - az*vy) ;                                               //向量外积在相减得到差分就是误差
-	//  ey = (az*vx - ax*vz) ;
-	//  ez = (ax*vy - ay*vx) ;
 
 	ex = (ay * vz - az * vy) + (my * wz - mz * wy);
 	ey = (az * vx - ax * vz) + (mz * wx - mx * wz);
@@ -700,9 +695,9 @@ void IMUupdate(double gx, double gy, double gz, double ax, double ay, double az,
 	q2 = q2 / norm;
 	q3 = q3 / norm;
 
-	angle_x = atan2(2 * q1 * q2 + 2 * q0 * q3, -2 * q2 * q2 - 2 * q3 * q3 + 1) * 57.3; // yaw
-	angle_y = asin(-2 * q1 * q3 + 2 * q0 * q2) * 57.3; // pitch
-	angle_z = atan2(2 * q2 * q3 + 2 * q0 * q1, -2 * q1 * q1 - 2 * q2 * q2 + 1) * 57.3; // roll
+	angle_x = asin(-2 * q1 * q3 + 2 * q0 * q2) * 57.3; // pitch
+	angle_y = atan2(2 * q2 * q3 + 2 * q0 * q1, -2 * q1 * q1 - 2 * q2 * q2 + 1) * 57.3; // roll
+	angle_z = atan2(2 * q1 * q2 + 2 * q0 * q3, -2 * q2 * q2 - 2 * q3 * q3 + 1) * 57.3; // yaw
 }
 
 void* attitude_pthread(void* arg)
@@ -738,7 +733,7 @@ _restart:
 	double timepre = 0;
 	int init_angle_cnt = 100;
 
-	double alt_f = 0.03;
+	double alt_f = 0.05;
 	double alt_val = 0;
 	double alt_pre = 0;
 
@@ -753,10 +748,10 @@ _restart:
 
 	double accel_corr[3] = { 0 };
 
-	// double mag_offset[3] = { -431.640802, 593.399220, 307.195002 };
-	// double mag_scale[3] = { 861.335705, 851.019437, 618.087718 };
-	double mag_offset[3] = { 0, 0, 0 };
-	double mag_scale[3] = { 1, 1, 1 };
+	double mag_offset[3] = { -144.322078, -99.051393, 58.861521 };
+	double mag_scale[3] = { 653.915949, 664.681395, 631.992458 };
+	// double mag_offset[3] = { 0, 0, 0 };
+	// double mag_scale[3] = { 1, 1, 1 };
 	double mag_raw[3] = { 0 };
 	double mag_real[3] = { 0 };
 	while (1)
@@ -773,28 +768,19 @@ _restart:
 		alt_val = altitude * alt_f + alt_pre * (1.0 - alt_f);
 		alt_pre = alt_val;
 
-		// if (tk % 10 == 0)
-		// {
-		// 	printf("acc %d %d %d g %d %d %d alt %d\n", //
-		// 		   (int)(accel_corr[0] * 1000.0),
-		// 		   (int)(accel_corr[1] * 1000.0),
-		// 		   (int)(accel_corr[2] * 1000.0),
-		// 		   (int)(bmi160_gyro.x),
-		// 		   (int)(bmi160_gyro.y),
-		// 		   (int)(bmi160_gyro.z),
-		// 		   (int)(alt_val * 1000.0));
-		// }
-
 		Vector mag = HMC5883L_readData();
 		mag_raw[0] = mag.XAxis;
 		mag_raw[1] = mag.YAxis;
 		mag_raw[2] = mag.ZAxis;
 		calibrate_magnetometer(mag_real, mag_raw, mag_offset, mag_scale);
-		//  Vector3f mag_body = { mag_real[0], mag_real[1], mag_real[2] };
-		//  Vector3f mag_ned = convertToEarthFrame(q_atti, mag_body);
-		//  // 计算航向角
-		double heading = atan2(mag_real[1], mag_real[0]);
-		// heading = convert_to_0_2PI(heading);
+
+		// if (tk % 10 == 0)
+		// {
+		// 	printf("%6d %6d %6d\n", //
+		// 		   (int)(mag_real[0] * 1000),
+		// 		   (int)(mag_real[1] * 1000),
+		// 		   (int)(mag_real[2] * 1000));
+		// }
 
 		// 转为弧度制
 		rate[0] = (bmi160_gyro.x / 32768.0 * 2000.0) * M_PI / 180.0;
@@ -808,20 +794,8 @@ _restart:
 
 		calculateRealAcceleration(acc, accel_offset, accel_T, accel_corr);
 
-		// 互补滤波
-		// q_atti = complementaryFilter(dt, q_atti, accel_corr[0], accel_corr[1], accel_corr[2], &rate[0], &rate[1], &rate[2], mag_real[0], mag_real[1], mag_real[2]);
-
-		// 姿态四元数转欧拉角
-		// quaternionToEuler(q_atti, &angle[0], &angle[1], &angle[2]);
-
 		IMUupdate(rate[0], rate[1], rate[2], accel_corr[0], accel_corr[1], accel_corr[2], mag_real[0], mag_real[1], mag_real[2]);
-
-		// 转角度制
-		// for (int i = 0; i < 3; i++)
-		// {
-		// 	angle[i] = angle[i] * 180.0 / M_PI;
-		// }
-
+		
 		if (tk % 10 == 0)
 		{
 			printf("dt %d angle %4d %4d %4d alt %4d\n", //
