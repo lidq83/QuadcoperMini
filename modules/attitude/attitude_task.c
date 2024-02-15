@@ -236,8 +236,19 @@ void calibrate_magnetometer(double* real, double* raw, double* offset, double* s
 #define Ki	  1.2f	  // 积分增益
 #define halfT 0.0025f // 采样周期的一半
 
+Vector3f gyro	   = { 0 };
+Vector3f accel	   = { 0 };
+Vector3f mag	   = { 0 };
+Vector3f accel_ned = { 0 };
+Vector3f angle	   = { 0, 0, 0 };
+
+static uint32_t _tk		 = 0;
+double yaw				 = 0;
+static double yaw_offset = 0;
+static double yaw_pre	 = 0;
+static int yaw_circle	 = 0;
+
 static Quaternion q_atti = { 1.0, 0, 0, 0 };
-static Vector3f angle	 = { 0, 0, 0 };
 static Vector3f eInt	 = { 0, 0, 0 };
 
 void IMUupdate(Quaternion* q, Vector3f gyro, Vector3f accel, Vector3f mag)
@@ -327,6 +338,32 @@ void IMUupdate(Quaternion* q, Vector3f gyro, Vector3f accel, Vector3f mag)
 	angle.x = asin(-2 * q->x * q->z + 2 * q->w * q->y);											// pitch
 	angle.y = atan2(2 * q->y * q->z + 2 * q->w * q->x, -2 * q->x * q->x - 2 * q->y * q->y + 1); // roll
 	angle.z = atan2(2 * q->x * q->y + 2 * q->w * q->z, -2 * q->y * q->y - 2 * q->z * q->z + 1); // yaw
+
+	double yaw_temp = fmod(angle.z + M_PI, 2.0 * M_PI);
+	if (fabs(yaw_temp - yaw_pre) > M_PI)
+	{
+		// 正转满一圈
+		if (yaw_temp < yaw_pre)
+		{
+			yaw_circle++;
+		}
+		// 反转满一圈
+		if (yaw_temp > yaw_pre)
+		{
+			yaw_circle--;
+		}
+	}
+	yaw_pre = yaw_temp;
+	yaw		= yaw_temp + (2.0 * M_PI * yaw_circle);
+	//相对航向
+	if (_tk < 200)
+	{
+		yaw_offset = yaw;
+	}
+	else
+	{
+		yaw -= yaw_offset;
+	}
 }
 
 Quaternion quaternionMultiply(Quaternion q1, Quaternion q2)
@@ -361,18 +398,6 @@ Vector3f RotateVectorByQuaternion(Vector3f vector, Quaternion q)
 	return ret;
 }
 
-#define Q_accel	   0.03 // 加速计噪声协方差
-#define R_accel	   0.5	// 加速计测量噪声协方差
-#define Q_altitude 0.1	// 气压计噪声协方差
-#define R_altitude 1.0	// 气压计测量噪声协方差
-
-// 系统状态向量
-typedef struct
-{
-	double height;	 // 高度
-	double velocity; // 垂直速度
-} StateVector;
-
 typedef struct output_s
 {
 	float dt;			// 时间戳约5ms
@@ -384,10 +409,6 @@ typedef struct output_s
 	float accel_ned[3]; // 北东地坐标系加速度
 	float altitude[2];	// 气压计高度[0]为原始读数，[1]为低通滤波后数值
 } output_s;
-
-void output_data()
-{
-}
 
 void* attitude_pthread(void* arg)
 {
@@ -412,8 +433,6 @@ _restart:
 	HMC5883L_setDataRate(HMC5883L_DATARATE_75HZ);
 	HMC5883L_setSamples(HMC5883L_SAMPLES_8);
 	printf("HMC5883 init ok\n");
-
-	uint32_t tk = 0;
 
 	double timepre = 0;
 
@@ -444,13 +463,6 @@ _restart:
 	double altitude		   = 0;
 	double accel_z_offset  = 0;
 	double accel_z		   = 0;
-
-	Vector3f gyro	   = { 0 };
-	Vector3f accel	   = { 0 };
-	Vector3f mag	   = { 0 };
-	Vector3f accel_ned = { 0 };
-
-	StateVector st = { 0, 0 };
 
 	output_s log = { 0 };
 
@@ -500,17 +512,18 @@ _restart:
 		accel_ned = RotateVectorByQuaternion(accel, q_atti);
 
 #if !_LOG
-		if (tk % 10 == 0)
-		{
-			printf("dt %d angle %4d %4d %4d accel_ned %4d %4d %4d\n", //
-				   (int)(dt * 10000),
-				   (int)(angle.x * 180 / M_PI * 10),
-				   (int)(angle.y * 180 / M_PI * 10),
-				   (int)(angle.z * 180 / M_PI * 10),
-				   (int)(accel_ned.x * 10),
-				   (int)(accel_ned.y * 10),
-				   (int)(accel_ned.z * 10));
-		}
+		// if (_tk % 10 == 0)
+		// {
+		// 	printf("dt %d angle %4d %4d %4d (%6d)accel_ned %4d %4d %4d\n", //
+		// 		   (int)(dt * 10000),
+		// 		   (int)(angle.x * 180 / M_PI * 10),
+		// 		   (int)(angle.y * 180 / M_PI * 10),
+		// 		   (int)(angle.z * 180 / M_PI * 10),
+		// 		   (int)(yaw * 180 / M_PI),
+		// 		   (int)(accel_ned.x * 10),
+		// 		   (int)(accel_ned.y * 10),
+		// 		   (int)(accel_ned.z * 10));
+		// }
 #else
 		log.dt			 = dt;
 		log.gyro[0]		 = gyro.x;
@@ -544,7 +557,7 @@ _restart:
 			HAL_UART_Transmit(&huart1, &p[i], 1, 0xFFFF);
 		}
 #endif
-		tk++;
+		_tk++;
 
 		msleep(MS);
 	}
