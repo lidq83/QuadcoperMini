@@ -49,9 +49,9 @@ int main(void)
 	kernel_startup();
 
 	led_task();
-	attitude_task();
+	// attitude_task();
 	// controller_task();
-	// nrf2401_task();
+	nrf2401_task();
 
 	_kernel_startup = 1;
 

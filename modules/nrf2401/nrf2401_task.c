@@ -63,14 +63,14 @@ void* nrf2401_pthread(void* arg)
 		sem_wait(&sem_sig);
 		rx_len = NRF24L01_Read_Reg(R_RX_PL_WID); // 读取接收到的数据个数
 		NRF24L01_Read_Buf(RD_RX_PLOAD, rx_buff, rx_len); // 接收到数据
-		printf("rx_len %d recv_cnt %u\n", rx_len, recv_cnt);
+		// printf("rx_len %d recv_cnt %u\n", rx_len, recv_cnt);
 		if (rx_len > 0)
 		{
-			for (int i = 0; i < rx_len; i++)
-			{
-				printf("%02x ", rx_buff[i]);
-			}
-			printf("\n");
+			// for (int i = 0; i < rx_len; i++)
+			// {
+			// 	printf("%02x ", rx_buff[i]);
+			// }
+			// printf("\n");
 			protocol_append(rx_buff, rx_len);
 		}
 
@@ -78,7 +78,7 @@ void* nrf2401_pthread(void* arg)
 		NRF24L01_Write_Reg(FLUSH_RX, 0xff); // 清除RX FIFO
 		NRF24L01_Clear_IRQ_Flag(IRQ_ALL);
 
-		// RF24L01_Set_Mode(MODE_RX);
+		RF24L01_Set_Mode(MODE_RX);
 		int ret = protocol_parse(ctl);
 		if (ret == 0)
 		{
@@ -127,11 +127,16 @@ void* nrf2401_pthread(void* arg)
 
 			ctl_switch(ctl[9]);
 
-			static uint32_t tk = 0;
-			if (tk++ % 10 == 0)
-			{
-				printf("%d %d %d %d\n", (int)(ctl_thro * 1000), (int)(ctl_pitch * 1000), (int)(ctl_roll * 1000), (int)(ctl_yaw * 1000));
-			}
+			// static uint32_t tk = 0;
+			// if (tk++ % 2 == 0)
+			// {
+			// 	printf("%04d %04d %04d %04d ", (int)(ctl_thro * 1000), (int)(ctl_pitch * 1000), (int)(ctl_roll * 1000), (int)(ctl_yaw * 1000));
+			// 	for (int i = 0; i < 16; i++)
+			// 	{
+			// 		printf("%d ", ctl_sw[i]);
+			// 	}
+			// 	printf("\n");
+			// }
 		}
 		// msleep(1);
 	}

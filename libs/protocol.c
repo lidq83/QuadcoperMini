@@ -48,14 +48,14 @@ int protocol_parse(uint16_t* ctl)
 		return -1;
 	}
 
-	char buff[(P_SIZE_HEAD + P_SIZE_DATA + P_SIZE_CRC) * 2] = { 0 };
+	uint8_t buff[(P_SIZE_HEAD + P_SIZE_DATA + P_SIZE_CRC) * 2] = { 0 };
 	uint16_t crc = 0;
 	int ind = 0;
 	int step = 0;
 	int foot = bs.foot;
 	for (int i = 0; i < cnt; i++)
 	{
-		char ch = bs.buff[foot];
+		uint8_t ch = bs.buff[foot];
 		foot++;
 		foot %= BUFF_SIZE;
 
