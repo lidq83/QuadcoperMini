@@ -16,15 +16,18 @@
 extern TIM_HandleTypeDef htim1;
 extern I2C_HandleTypeDef hi2c1;
 extern SPI_HandleTypeDef hspi2;
+extern UART_HandleTypeDef huart1;
 
-#define MS (1)
+#define _LOG	 (0)
+
+#define MS		 (1)
 #define CALI_CNT (300)
 
 static uint8_t chip_id = 0;
 
 int8_t bmi160_write_spi(uint8_t dev_addr, uint8_t reg_addr, uint8_t* write_data, uint16_t len)
 {
-	uint8_t d_read = 0;
+	uint8_t d_read	= 0;
 	uint8_t d_write = reg_addr;
 
 	// CS LOW
@@ -42,7 +45,7 @@ int8_t bmi160_write_spi(uint8_t dev_addr, uint8_t reg_addr, uint8_t* write_data,
 
 int8_t bmi160_read_spi(uint8_t dev_addr, uint8_t reg_addr, uint8_t* data, uint16_t len)
 {
-	uint8_t d_read = 0;
+	uint8_t d_read	= 0;
 	uint8_t d_write = reg_addr;
 
 	// CS LOW
@@ -79,7 +82,7 @@ void bmi160_delay_msec(uint32_t period)
 #define BMI160_SHUTTLE_ID 0x38
 
 /*! bmi160 Device address */
-#define BMI160_DEV_ADDR BMI160_I2C_ADDR
+#define BMI160_DEV_ADDR	  BMI160_I2C_ADDR
 
 /*********************************************************************/
 /* global variables */
@@ -139,17 +142,17 @@ static int init_bmi160(void)
 	}
 
 	/* Select the Output data rate, range of accelerometer sensor */
-	bmi160dev.accel_cfg.odr = BMI160_ACCEL_ODR_1600HZ;
+	bmi160dev.accel_cfg.odr	  = BMI160_ACCEL_ODR_1600HZ;
 	bmi160dev.accel_cfg.range = BMI160_ACCEL_RANGE_16G;
-	bmi160dev.accel_cfg.bw = BMI160_ACCEL_BW_NORMAL_AVG4;
+	bmi160dev.accel_cfg.bw	  = BMI160_ACCEL_BW_NORMAL_AVG4;
 
 	/* Select the power mode of accelerometer sensor */
 	bmi160dev.accel_cfg.power = BMI160_ACCEL_NORMAL_MODE;
 
 	/* Select the Output data rate, range of Gyroscope sensor */
-	bmi160dev.gyro_cfg.odr = BMI160_GYRO_ODR_3200HZ;
+	bmi160dev.gyro_cfg.odr	 = BMI160_GYRO_ODR_3200HZ;
 	bmi160dev.gyro_cfg.range = BMI160_GYRO_RANGE_2000_DPS;
-	bmi160dev.gyro_cfg.bw = BMI160_GYRO_BW_NORMAL_MODE;
+	bmi160dev.gyro_cfg.bw	 = BMI160_GYRO_BW_NORMAL_MODE;
 
 	/* Select the power mode of Gyroscope sensor */
 	bmi160dev.gyro_cfg.power = BMI160_GYRO_NORMAL_MODE;
@@ -177,12 +180,12 @@ static void init_bmi160_sensor_driver_interface(void)
 
 	/* link read/write/delay function of host system to appropriate
 	 * bmi160 function call prototypes */
-	bmi160dev.write = bmi160_write_i2c;
-	bmi160dev.read = bmi160_read_i2c;
+	bmi160dev.write	   = bmi160_write_i2c;
+	bmi160dev.read	   = bmi160_read_i2c;
 	bmi160dev.delay_ms = bmi160_delay_msec;
 
 	/* set correct i2c address */
-	bmi160dev.id = BMI160_DEV_ADDR;
+	bmi160dev.id   = BMI160_DEV_ADDR;
 	bmi160dev.intf = BMI160_I2C_INTF;
 #endif
 #if BMI160_INTERFACE_SPI == 1
@@ -191,11 +194,11 @@ static void init_bmi160_sensor_driver_interface(void)
 
 	/* link read/write/delay function of host system to appropriate
 	 *  bmi160 function call prototypes */
-	bmi160dev.write = bmi160_write_spi;
-	bmi160dev.read = bmi160_read_spi;
+	bmi160dev.write	   = bmi160_write_spi;
+	bmi160dev.read	   = bmi160_read_spi;
 	bmi160dev.delay_ms = bmi160_delay_msec;
-	bmi160dev.id = BMI160_SHUTTLE_ID;
-	bmi160dev.intf = BMI160_SPI_INTF;
+	bmi160dev.id	   = BMI160_SHUTTLE_ID;
+	bmi160dev.intf	   = BMI160_SPI_INTF;
 #endif
 }
 
@@ -229,13 +232,13 @@ void calibrate_magnetometer(double* real, double* raw, double* offset, double* s
 	real[2] = calibrated[2] / scale[2];
 }
 
-#define Kp 25.0f // 比例增益
-#define Ki 1.2f // 积分增益
+#define Kp	  25.0f	  // 比例增益
+#define Ki	  1.2f	  // 积分增益
 #define halfT 0.0025f // 采样周期的一半
 
 static Quaternion q_atti = { 1.0, 0, 0, 0 };
-static Vector3f angle = { 0, 0, 0 };
-static Vector3f eInt = { 0, 0, 0 };
+static Vector3f angle	 = { 0, 0, 0 };
+static Vector3f eInt	 = { 0, 0, 0 };
 
 void IMUupdate(Quaternion* q, Vector3f gyro, Vector3f accel, Vector3f mag)
 {
@@ -321,9 +324,9 @@ void IMUupdate(Quaternion* q, Vector3f gyro, Vector3f accel, Vector3f mag)
 	q->y = q->y / norm;
 	q->z = q->z / norm;
 
-	angle.x = asin(-2 * q->x * q->z + 2 * q->w * q->y) * 57.3; // pitch
-	angle.y = atan2(2 * q->y * q->z + 2 * q->w * q->x, -2 * q->x * q->x - 2 * q->y * q->y + 1) * 57.3; // roll
-	angle.z = atan2(2 * q->x * q->y + 2 * q->w * q->z, -2 * q->y * q->y - 2 * q->z * q->z + 1) * 57.3; // yaw
+	angle.x = asin(-2 * q->x * q->z + 2 * q->w * q->y);											// pitch
+	angle.y = atan2(2 * q->y * q->z + 2 * q->w * q->x, -2 * q->x * q->x - 2 * q->y * q->y + 1); // roll
+	angle.z = atan2(2 * q->x * q->y + 2 * q->w * q->z, -2 * q->y * q->y - 2 * q->z * q->z + 1); // yaw
 }
 
 Quaternion quaternionMultiply(Quaternion q1, Quaternion q2)
@@ -348,7 +351,7 @@ Vector3f RotateVectorByQuaternion(Vector3f vector, Quaternion q)
 
 	// 四元数旋转变换
 	Quaternion q_conjugate = { q.w, -q.x, -q.y, -q.z };
-	Quaternion ned = quaternionMultiply(quaternionMultiply(q, quat), q_conjugate);
+	Quaternion ned		   = quaternionMultiply(quaternionMultiply(q, quat), q_conjugate);
 
 	// 提取转换后的磁力计数据
 	Vector3f ret;
@@ -358,74 +361,33 @@ Vector3f RotateVectorByQuaternion(Vector3f vector, Quaternion q)
 	return ret;
 }
 
-#define Q_accel 0.03 // 加速计噪声协方差
-#define R_accel 0.5 // 加速计测量噪声协方差
-#define Q_altitude 0.1 // 气压计噪声协方差
-#define R_altitude 1.0 // 气压计测量噪声协方差
+#define Q_accel	   0.03 // 加速计噪声协方差
+#define R_accel	   0.5	// 加速计测量噪声协方差
+#define Q_altitude 0.1	// 气压计噪声协方差
+#define R_altitude 1.0	// 气压计测量噪声协方差
 
 // 系统状态向量
 typedef struct
 {
-	double height; // 高度
+	double height;	 // 高度
 	double velocity; // 垂直速度
 } StateVector;
 
-// 扩展卡尔曼滤波器更新步骤
-void EKFUpdate(StateVector* state, double dt, double accel, double alt)
+typedef struct output_s
 {
-	// 预测步骤
-	state->height += dt * state->velocity; // 更新高度估计
-	state->velocity += dt * accel; // 更新速度估计
+	float dt;			// 时间戳约5ms
+	float gyro[3];		// 角速度
+	float accel[3];		// 加速度
+	float mag[3];		// 磁罗盘
+	float q[4];			// 姿态四元数
+	float angle[3];		// 欧拉角
+	float accel_ned[3]; // 北东地坐标系加速度
+	float altitude[2];	// 气压计高度[0]为原始读数，[1]为低通滤波后数值
+} output_s;
 
-	// 计算预测误差协方差
-	double F[2][2] = { { 1, dt }, { 0, 1 } }; // 状态转移矩阵的导数
-	double P[2][2] = { { Q_altitude, 0 }, { 0, Q_altitude } }; // 估计误差协方差
-	double P_pred[2][2] = { { 0, 0 }, { 0, 0 } }; // 预测误差协方差
-	double P_pred_temp[2][2] = { { 0, 0 }, { 0, 0 } }; // 临时矩阵
-	double P_pred_transpose[2][2] = { { 0, 0 }, { 0, 0 } }; // 转置矩阵
-
-	// 计算预测误差协方差
-	for (int i = 0; i < 2; i++)
-	{
-		for (int j = 0; j < 2; j++)
-		{
-			for (int k = 0; k < 2; k++)
-			{
-				P_pred_temp[i][j] += F[i][k] * P[k][j];
-			}
-		}
-	}
-	for (int i = 0; i < 2; i++)
-	{
-		for (int j = 0; j < 2; j++)
-		{
-			for (int k = 0; k < 2; k++)
-			{
-				P_pred[i][j] += P_pred_temp[i][k] * F[j][k];
-			}
-		}
-	}
-
-	// 更新步骤
-	double H[2] = { 1, 0 }; // 测量矩阵
-	double K[2] = { 0, 0 }; // 卡尔曼增益
-	double S = H[0] * P_pred[0][0] * H[0] + R_accel; // 测量残差方差
-
-	// 计算卡尔曼增益
-	K[0] = P_pred[0][0] * H[0] / S;
-	K[1] = P_pred[1][0] * H[0] / S;
-
-	// 更新估计状态和误差协方差
-	double z = alt - state->height; // 测量残差
-	state->height += K[0] * z; // 更新高度估计
-	state->velocity += K[1] * z; // 更新垂直速度估计
-
-	P[0][0] -= K[0] * H[0] * P_pred[0][0];
-	P[0][1] -= K[0] * H[0] * P_pred[0][1];
-	P[1][0] -= K[0] * H[0] * P_pred[1][0];
-	P[1][1] -= K[0] * H[0] * P_pred[1][1];
+void output_data()
+{
 }
-
 
 void* attitude_pthread(void* arg)
 {
@@ -455,128 +417,133 @@ _restart:
 
 	double timepre = 0;
 
-	double alt_f = 0.1;
+	double alt_f   = 0.1;
 	double alt_val = 0;
 	double alt_pre = 0;
-	///
-	double accel_offset[3] = { -1.653500 - 0.449500 - 0.311000 };
-	double accel_T[3][3] = {
-		{ 1.000163, -0.006901, -0.064262 },
-		{ -0.019924, 1.002784, 0.005600 },
-		{ -0.007842, -0.006224, 0.983009 }
-	};
-	///
 
-	double acc[3] = { 0 };
+	// 手工校准后的零偏和标度因数
+	double accel_offset[3] = { -1.653500 - 0.449500 - 0.311000 };
+	double accel_T[3][3]   = {
+		  { 1.000163, -0.006901, -0.064262 },
+		  { -0.019924, 1.002784, 0.005600 },
+		  { -0.007842, -0.006224, 0.983009 }
+	};
+	//
+
+	double acc[3]		 = { 0 };
 	double accel_corr[3] = { 0 };
+
+	// 手工校准后的零偏和标度因数
 	double mag_offset[3] = { -144.322078, -99.051393, 58.861521 };
-	double mag_scale[3] = { 653.915949, 664.681395, 631.992458 };
-	double mag_raw[3] = { 0 };
-	double mag_real[3] = { 0 };
+	double mag_scale[3]	 = { 653.915949, 664.681395, 631.992458 };
+	//
+	double mag_raw[3]  = { 0 };
+	double mag_corr[3] = { 0 };
 
 	double altitude_offset = 0;
-	double altitude = 0;
-	double accel_z_offset = 0;
-	double accel_z = 0;
+	double altitude		   = 0;
+	double accel_z_offset  = 0;
+	double accel_z		   = 0;
 
-	Vector3f gyro = { 0 };
-	Vector3f accel = { 0 };
-	Vector3f mag = { 0 };
+	Vector3f gyro	   = { 0 };
+	Vector3f accel	   = { 0 };
+	Vector3f mag	   = { 0 };
 	Vector3f accel_ned = { 0 };
 
 	StateVector st = { 0, 0 };
 
+	output_s log = { 0 };
+
 	while (1)
 	{
 		// 计算当前时间戳
-		uint64_t cnt = get_count();
+		uint64_t cnt	 = get_count();
 		double timestamp = cnt / 1000000.0;
-		double dt = timestamp - timepre;
-		timepre = timestamp;
+		double dt		 = timestamp - timepre;
+		timepre			 = timestamp;
 
+		// 取得陀螺和加速度读数
 		bmi160_get_sensor_data((BMI160_ACCEL_SEL | BMI160_GYRO_SEL), &bmi160_accel, &bmi160_gyro, &bmi160dev);
-
-		double alt = Barometer_calculate();
-		alt_val = alt * alt_f + alt_pre * (1.0 - alt_f);
-		alt_pre = alt_val;
-		altitude = alt_val;
-		if (tk < 500)
-		{
-			altitude_offset = 0;
-			accel_z_offset = 0;
-		}
-		else if (tk >= 500 && tk < 1000)
-		{
-			altitude_offset += alt_val;
-			accel_z_offset += accel_ned.z;
-		}
-		else if (tk == 1000)
-		{
-			altitude_offset /= 500;
-			accel_z_offset /= 500;
-		}
-		else
-		{
-			altitude = alt_val - altitude_offset;
-			accel_z = accel_ned.z - accel_z_offset;
-		}
-
-		Vector m = HMC5883L_readData();
-		mag_raw[0] = m.XAxis;
-		mag_raw[1] = m.YAxis;
-		mag_raw[2] = m.ZAxis;
-		calibrate_magnetometer(mag_real, mag_raw, mag_offset, mag_scale);
-
-		mag.x = mag_real[0];
-		mag.y = mag_real[1];
-		mag.z = mag_real[2];
-
 		// 转为弧度制
 		gyro.x = (bmi160_gyro.x / 32768.0 * 2000.0) * M_PI / 180.0;
 		gyro.y = (bmi160_gyro.y / 32768.0 * 2000.0) * M_PI / 180.0;
 		gyro.z = (bmi160_gyro.z / 32768.0 * 2000.0) * M_PI / 180.0;
-
 		// 转为加速度
 		acc[0] = bmi160_accel.x / 32768.0f * (ONE_G * 16.0);
 		acc[1] = bmi160_accel.y / 32768.0f * (ONE_G * 16.0);
 		acc[2] = bmi160_accel.z / 32768.0f * (ONE_G * 16.0);
-
+		// 根据offset和scale得到真实值
 		calculateRealAcceleration(acc, accel_offset, accel_T, accel_corr);
-
 		accel.x = accel_corr[0];
 		accel.y = accel_corr[1];
 		accel.z = accel_corr[2];
 
+		// 取得气压计读数
+		double alt_origin = Barometer_calculate();
+		alt_val			  = alt_origin * alt_f + alt_pre * (1.0 - alt_f);
+		alt_pre			  = alt_val;
+
+		// 取得磁罗盘读数
+		Vector m   = HMC5883L_readData();
+		mag_raw[0] = m.XAxis;
+		mag_raw[1] = m.YAxis;
+		mag_raw[2] = m.ZAxis;
+		// 根据offset和scale得到真实值
+		calibrate_magnetometer(mag_corr, mag_raw, mag_offset, mag_scale);
+		mag.x = mag_corr[0];
+		mag.y = mag_corr[1];
+		mag.z = mag_corr[2];
+
 		IMUupdate(&q_atti, gyro, accel, mag);
 
+		// 将加速度由机体坐标系转为ned坐标系
 		accel_ned = RotateVectorByQuaternion(accel, q_atti);
 
-		if (tk > 1000)
+#if !_LOG
+		if (tk % 10 == 0)
 		{
-			EKFUpdate(&st, dt, accel_z, altitude);
+			printf("dt %d angle %4d %4d %4d accel_ned %4d %4d %4d\n", //
+				   (int)(dt * 10000),
+				   (int)(angle.x * 180 / M_PI * 10),
+				   (int)(angle.y * 180 / M_PI * 10),
+				   (int)(angle.z * 180 / M_PI * 10),
+				   (int)(accel_ned.x * 10),
+				   (int)(accel_ned.y * 10),
+				   (int)(accel_ned.z * 10));
 		}
+#else
+		log.dt			 = dt;
+		log.gyro[0]		 = gyro.x;
+		log.gyro[1]		 = gyro.y;
+		log.gyro[2]		 = gyro.z;
+		log.accel[0]	 = accel.x;
+		log.accel[1]	 = accel.y;
+		log.accel[2]	 = accel.z;
+		log.mag[0]		 = mag.x;
+		log.mag[1]		 = mag.y;
+		log.mag[2]		 = mag.z;
+		log.q[0]		 = q_atti.w;
+		log.q[1]		 = q_atti.x;
+		log.q[2]		 = q_atti.y;
+		log.q[3]		 = q_atti.z;
+		log.angle[0]	 = angle.x;
+		log.angle[1]	 = angle.y;
+		log.angle[2]	 = angle.z;
+		log.accel_ned[0] = accel_ned.x;
+		log.accel_ned[1] = accel_ned.y;
+		log.accel_ned[2] = accel_ned.z;
+		log.altitude[0]	 = alt_origin;
+		log.altitude[1]	 = alt_val;
 
-		// if (tk % 10 == 0)
-		// {
-		// 	// printf("dt %d angle %4d %4d %4d accel_ned %4d %4d %4d\n", //
-		// 	// 	   (int)(dt * 10000),
-		// 	// 	   (int)(angle.x * 10),
-		// 	// 	   (int)(angle.y * 10),
-		// 	// 	   (int)(angle.z * 10),
-		// 	// 	   (int)(accel_ned.x * 10),
-		// 	// 	   (int)(accel_ned.y * 10),
-		// 	// 	   (int)(accel_ned.z * 10));
-
-		// 	printf("tk %u angle %4d %4d %4d ned_z %4d vel %4d height %4d\n", //
-		// 		   tk,
-		// 		   (int)(angle.x * 10),
-		// 		   (int)(angle.y * 10),
-		// 		   (int)(angle.z * 10),
-		// 		   (int)(accel_z * 100),
-		// 		   (int)(st.velocity * 1000),
-		// 		   (int)(st.height * 1000));
-		// }
-
+		uint8_t head[2] = { 0x55, 0xaa };
+		HAL_UART_Transmit(&huart1, &head[0], 1, 0xFFFF); // 阻塞方式打印
+		HAL_UART_Transmit(&huart1, &head[1], 1, 0xFFFF); // 阻塞方式打印
+		uint8_t* p = (uint8_t*)&log;
+		for (int i = 0; i < sizeof(output_s); i++)
+		{
+			HAL_UART_Transmit(&huart1, &p[i], 1, 0xFFFF);
+		}
+#endif
 		tk++;
 
 		msleep(MS);
