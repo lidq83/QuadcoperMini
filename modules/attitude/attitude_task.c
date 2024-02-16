@@ -242,11 +242,9 @@ Vector3f mag	   = { 0 };
 Vector3f accel_ned = { 0 };
 Vector3f angle	   = { 0, 0, 0 };
 
-static uint32_t _tk		 = 0;
-double yaw				 = 0;
-static double yaw_offset = 0;
-static double yaw_pre	 = 0;
-static int yaw_circle	 = 0;
+double yaw			  = 0;
+static double yaw_pre = 0;
+static int yaw_circle = 0;
 
 static Quaternion q_atti = { 1.0, 0, 0, 0 };
 static Vector3f eInt	 = { 0, 0, 0 };
@@ -339,31 +337,18 @@ void IMUupdate(Quaternion* q, Vector3f gyro, Vector3f accel, Vector3f mag)
 	angle.y = atan2(2 * q->y * q->z + 2 * q->w * q->x, -2 * q->x * q->x - 2 * q->y * q->y + 1); // roll
 	angle.z = atan2(2 * q->x * q->y + 2 * q->w * q->z, -2 * q->y * q->y - 2 * q->z * q->z + 1); // yaw
 
-	double yaw_temp = fmod(angle.z + M_PI, 2.0 * M_PI);
-	if (fabs(yaw_temp - yaw_pre) > M_PI)
-	{
-		// 正转满一圈
-		if (yaw_temp < yaw_pre)
-		{
-			yaw_circle++;
-		}
-		// 反转满一圈
-		if (yaw_temp > yaw_pre)
-		{
-			yaw_circle--;
-		}
-	}
-	yaw_pre = yaw_temp;
-	yaw		= yaw_temp + (2.0 * M_PI * yaw_circle);
-	//相对航向
-	if (_tk < 200)
-	{
-		yaw_offset = yaw;
-	}
-	else
-	{
-		yaw -= yaw_offset;
-	}
+	// if (angle.z - yaw_pre < -M_PI)
+	// {
+	// 	yaw_circle++;
+	// }
+	// else if (angle.z - yaw_pre > M_PI)
+	// {
+	// 	yaw_circle--;
+	// }
+
+	// yaw		= angle.z + (yaw_circle * 2 * M_PI);
+	// yaw_pre = angle.z;
+	yaw = angle.z;
 }
 
 Quaternion quaternionMultiply(Quaternion q1, Quaternion q2)
@@ -433,6 +418,8 @@ _restart:
 	HMC5883L_setDataRate(HMC5883L_DATARATE_75HZ);
 	HMC5883L_setSamples(HMC5883L_SAMPLES_8);
 	printf("HMC5883 init ok\n");
+
+	uint32_t _tk = 0;
 
 	double timepre = 0;
 

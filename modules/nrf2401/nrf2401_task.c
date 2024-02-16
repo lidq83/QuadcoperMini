@@ -13,10 +13,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
-float ctl_thro	   = 0;
-float ctl_pitch	   = 0;
-float ctl_roll	   = 0;
-float ctl_yaw	   = 0;
+double ctl_thro	   = 0;
+double ctl_pitch	   = 0;
+double ctl_roll	   = 0;
+double ctl_yaw	   = 0;
 uint8_t ctl_sw[16] = { 0 };
 
 static sem_t sem_sig	= { 0 };
@@ -49,12 +49,12 @@ void* nrf2401_pthread(void* arg)
 	NRF24L01_Set_Power(POWER_0DBM);
 	NRF24L01_Set_Speed(SPEED_250K);
 
-	float filter = 1.0f; // 不使用滤波（在发射端已经滤波了）
+	double filter = 1.0f; // 不使用滤波（在发射端已经滤波了）
 
-	float ctl_yaw_last	 = 0;
-	float ctl_thro_last	 = 0;
-	float ctl_roll_last	 = 0;
-	float ctl_pitch_last = 0;
+	double ctl_yaw_last	 = 0;
+	double ctl_thro_last	 = 0;
+	double ctl_roll_last	 = 0;
+	double ctl_pitch_last = 0;
 
 	RF24L01_Set_Mode(MODE_RX);
 
@@ -84,10 +84,10 @@ void* nrf2401_pthread(void* arg)
 		{
 			tk_recv = HAL_GetTick();
 
-			float roll	= ((float)(ctl[0] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
-			float pitch = ((float)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
-			float yaw	= ((float)(ctl[2] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
-			float thro	= ((float)(ctl[3] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+			double roll	= ((double)(ctl[0] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+			double pitch = ((double)(ctl[1] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+			double yaw	= ((double)(ctl[2] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
+			double thro	= ((double)(ctl[3] - CTL_PWM_MIN)) / CTL_PWM_SCALE;
 
 			pitch = (1.0f - pitch * 2.0f);
 			roll  = (1.0f - roll * 2.0f);
